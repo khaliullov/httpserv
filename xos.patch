@@ -1,0 +1,338 @@
+diff --git a/src/Makefile.include b/src/Makefile.include
+index d29b935..c653b74 100644
+--- a/src/Makefile.include
++++ b/src/Makefile.include
+@@ -2,23 +2,26 @@
+ # The rest of this is a work in progress, but should not
+ # need modification
+ ######################################################################
+-BUILD ?= release
++BUILD   ?= release
+ 
+-CC     ?= gcc
+-CXX    ?= g++
+-LD     ?= ld
+-OBJCPY ?= objcopy
++CC      ?= gcc
++CXX     ?= g++
++LD      ?= ld
++OBJCPY  ?= objcopy
+ 
+ DBG_TARGETS = $(TARGETS:%=%.debug)
+ COV_TARGETS = $(TARGETS:%=%.coverage)
+ 
++SHR_LIB_TARGETS = $(LIB_TARGETS:%=%.shared)
+ DBG_LIB_TARGETS = $(LIB_TARGETS:%=%.debug)
+ COV_LIB_TARGETS = $(LIB_TARGETS:%=%.coverage)
+ 
++DESTDIR ?= /usr/local
++
+ #
+ # Print out our settings
+ #
+-WS = $(BLANK) $(BLANK)
++#WS = $(BLANK) $(BLANK)
+ #$(info $(WS) INCLUDES = '$(INCLUDES)')
+ #$(info $(WS)  DEFINES = '$(DEFINES)')
+ #$(info $(WS)   CFLAGS = '$(CFLAGS)')
+@@ -152,6 +155,8 @@ debug: $(DBG_TARGETS) $(DBG_LIB_TARGETS)
+ 
+ coverage: $(COV_TARGETS) $(COV_LIB_TARGETS)
+ 
++shared: $(SHR_LIB_TARGETS)
++
+ libs: 
+ 
+ #
+@@ -222,6 +227,10 @@ define MAKE_LIBRARY
+   DBG_STATIC_LIB = $$(LIBDIR)/$$(LIBNAME).debug.a
+   COV_STATIC_LIB = $$(LIBDIR)/$$(LIBNAME).coverage.a
+ 
++  SHARED_LIB = $$(LIBDIR)/$$(LIBNAME).so
++  DBG_SHARED_LIB = $$(LIBDIR)/$$(LIBNAME).debug.so
++  COV_SHARED_LIB = $$(LIBDIR)/$$(LIBNAME).coverage.so
++
+   #
+   # Library objects to build
+   #
+diff --git a/src/codecvt/Makefile b/src/codecvt/Makefile
+index e3dedc1..3e4278a 100644
+--- a/src/codecvt/Makefile
++++ b/src/codecvt/Makefile
+@@ -1,53 +1,61 @@
+ ####
+ # Project-specific details & settings
+ ####
+-BUILD           ?= release
+-
+-INCLUDES_base     =
+-INCLUDES_release  = $(INCLUDES_base)
+-INCLUDES_debug    = $(INCLUDES_base)
+-INCLUDES_coverage = $(INCLUDES_base)
+-INCLUDES          = $(INCLUDES_$(BUILD))
+-
+-DEFINES_base      =
+-DEFINES_release   = $(DEFINES_base) -DNDEBUG
+-DEFINES_debug     = $(DEFINES_base) -D_GLIBCXX_DEBUG
+-DEFINES_coverage  = $(DEFINES_base)
+-DEFINES           = $(DEFINES_$(BUILD))
+-
+-CFLAGS_base       = -Wall -Wextra -pthread -g3
+-CFLAGS_release    = $(CFLAGS_base) $(DEFINES) $(INCLUDES) -O3
+-CFLAGS_debug      = $(CFLAGS_base) $(DEFINES_debug) $(INCLUDES_debug)
+-CFLAGS_coverage   = $(CFLAGS_base) $(DEFINES_coverage) $(INCLUDES_coverage) \
+-                    -fprofile-arcs -ftest-coverage
+-CFLAGS            = $(CFLAGS_$(BUILD))
+-
+-CXXFLAGS_base     = -std=c++11
+-CXXFLAGS_release  = $(CXXFLAGS_base) $(CFLAGS)
+-CXXFLAGS_debug    = $(CXXFLAGS_base) $(CFLAGS_debug)
+-CXXFLAGS_coverage = $(CXXFLAGS_base) $(CFLAGS_coverage)
+-CXXFLAGS          = $(CXXFLAGS_$(BUILD))
+-
+-LDFLAGS_base      =
+-LDFLAGS_release   = $(LDFLAGS_base)
+-LDFLAGS_debug     = $(LDFLAGS_base) -rdynamic
+-LDFLAGS_coverage  = $(LDFLAGS_base)
+-LDFLAGS           = $(LDFLAGS_$(BUILD))
+-
+-LIBS_base         = -lrt -ldl
+-LIBS_release      = $(LIBS_base)
+-LIBS_debug        = $(LIBS_base)
+-LIBS_coverage     = $(LIBS_base)
+-LIBS              = $(LIBS_$(BUILD))
+-
+-TARGETS           = test
+-LIB_TARGETS       = libcodecvt
+-
+-libcodecvt_OBJS   = codecvt_specializations.o \
+-                    codecvt_utf8.o \
+-                    codecvt_utf16.o \
+-                    codecvt_utf8_utf16.o
+-
+-test_OBJS         = test.o $(libcodecvt_OBJS)
++BUILD             ?= release
++
++INCLUDES_base     ?=
++INCLUDES_release  ?= $(INCLUDES_base)
++INCLUDES_debug    ?= $(INCLUDES_base)
++INCLUDES_coverage ?= $(INCLUDES_base)
++INCLUDES          ?= $(INCLUDES_$(BUILD))
++
++DEFINES_base      ?=
++DEFINES_release   ?= $(DEFINES_base) -DNDEBUG
++DEFINES_debug     ?= $(DEFINES_base) -D_GLIBCXX_DEBUG
++DEFINES_coverage  ?= $(DEFINES_base)
++DEFINES           ?= $(DEFINES_$(BUILD))
++
++CFLAGS_base       ?= -Wall -Wextra -pthread -g3
++CFLAGS_release    ?= $(CFLAGS_base) $(DEFINES) $(INCLUDES) -O3
++CFLAGS_debug      ?= $(CFLAGS_base) $(DEFINES_debug) $(INCLUDES_debug)
++CFLAGS_coverage   ?= $(CFLAGS_base) $(DEFINES_coverage) $(INCLUDES_coverage) \
++                     -fprofile-arcs -ftest-coverage
++CFLAGS            ?= $(CFLAGS_$(BUILD))
++
++CXXFLAGS_base     ?= -std=c++11
++CXXFLAGS_release  ?= $(CXXFLAGS_base) $(CFLAGS)
++CXXFLAGS_debug    ?= $(CXXFLAGS_base) $(CFLAGS_debug)
++CXXFLAGS_coverage ?= $(CXXFLAGS_base) $(CFLAGS_coverage)
++CXXFLAGS          ?= $(CXXFLAGS_$(BUILD))
++
++LDFLAGS_base      ?=
++LDFLAGS_release   ?= $(LDFLAGS_base)
++LDFLAGS_debug     ?= $(LDFLAGS_base) -rdynamic
++LDFLAGS_coverage  ?= $(LDFLAGS_base)
++LDFLAGS           ?= $(LDFLAGS_$(BUILD))
++
++LIBS_base         ?= -lrt -ldl
++LIBS_release      ?= $(LIBS_base)
++LIBS_debug        ?= $(LIBS_base)
++LIBS_coverage     ?= $(LIBS_base)
++LIBS              ?= $(LIBS_$(BUILD))
++
++TARGETS            = test
++
++LIB_TARGETS        = libcodecvt
++
++libcodecvt_HEADERS = codecvt_mode.h \
++                     codecvt_specializations.h \
++                     codecvt_utf16.h \
++                     codecvt_utf8.h \
++                     codecvt_utf8_utf16.h \
++                     utf_conversion_helpers.h
++
++libcodecvt_OBJS    = codecvt_specializations.o \
++                     codecvt_utf8.o \
++                     codecvt_utf16.o \
++                     codecvt_utf8_utf16.o
++
++test_OBJS          = test.o $(libcodecvt_OBJS)
+ 
+ include ../Makefile.include
+diff --git a/src/descriptor/descriptor.h b/src/descriptor/descriptor.h
+index 035acc1..0c8b733 100644
+--- a/src/descriptor/descriptor.h
++++ b/src/descriptor/descriptor.h
+@@ -61,8 +61,6 @@ class timer_descriptor : descriptor
+ 	void arm_relative_timer(void * initial, void * interval);
+ 	void arm_absolute_timer(void * initial, void * interval);
+ 	void disarm_timer();
+-
+-	
+ };
+ 
+ //////////////////////////////////////////////////////////////////////
+diff --git a/src/filesystem/Makefile b/src/filesystem/Makefile
+index 78a0cbf..d16fb5e 100644
+--- a/src/filesystem/Makefile
++++ b/src/filesystem/Makefile
+@@ -1,44 +1,44 @@
+ ####
+ # Project-specific details & settings
+ ####
+-BUILD           ?= release
+-
+-INCLUDES_base     =
+-INCLUDES_release  = $(INCLUDES_base)
+-INCLUDES_debug    = $(INCLUDES_base)
+-INCLUDES_coverage = $(INCLUDES_base)
+-INCLUDES          = $(INCLUDES_$(BUILD))
+-
+-DEFINES_base      =
+-DEFINES_release   = $(DEFINES_base) -DNDEBUG
+-DEFINES_debug     = $(DEFINES_base) -D_GLIBCXX_DEBUG
+-DEFINES_coverage  = $(DEFINES_base)
+-DEFINES           = $(DEFINES_$(BUILD))
+-
+-CFLAGS_base       = -Wall -Wextra -pthread -g3
+-CFLAGS_release    = $(CFLAGS_base) $(DEFINES) $(INCLUDES) -O3
+-CFLAGS_debug      = $(CFLAGS_base) $(DEFINES_debug) $(INCLUDES_debug)
+-CFLAGS_coverage   = $(CFLAGS_base) $(DEFINES_coverage) $(INCLUDES_coverage) \
+-                    -fprofile-arcs -ftest-coverage
+-CFLAGS            = $(CFLAGS_$(BUILD))
+-
+-CXXFLAGS_base     = -std=c++11
+-CXXFLAGS_release  = $(CXXFLAGS_base) $(CFLAGS)
+-CXXFLAGS_debug    = $(CXXFLAGS_base) $(CFLAGS_debug)
+-CXXFLAGS_coverage = $(CXXFLAGS_base) $(CFLAGS_coverage)
+-CXXFLAGS          = $(CXXFLAGS_$(BUILD))
+-
+-LDFLAGS_base      =
+-LDFLAGS_release   = $(LDFLAGS_base)
+-LDFLAGS_debug     = $(LDFLAGS_base) -rdynamic
+-LDFLAGS_coverage  = $(LDFLAGS_base)
+-LDFLAGS           = $(LDFLAGS_$(BUILD))
+-
+-LIBS_base         = -lrt -ldl
+-LIBS_release      = $(LIBS_base)
+-LIBS_debug        = $(LIBS_base)
+-LIBS_coverage     = $(LIBS_base)
+-LIBS              = $(LIBS_$(BUILD))
++BUILD             ?= release
++
++INCLUDES_base     ?=
++INCLUDES_release  ?= $(INCLUDES_base)
++INCLUDES_debug    ?= $(INCLUDES_base)
++INCLUDES_coverage ?= $(INCLUDES_base)
++INCLUDES          ?= $(INCLUDES_$(BUILD))
++
++DEFINES_base      ?=
++DEFINES_release   ?= $(DEFINES_base) -DNDEBUG
++DEFINES_debug     ?= $(DEFINES_base) -D_GLIBCXX_DEBUG
++DEFINES_coverage  ?= $(DEFINES_base)
++DEFINES           ?= $(DEFINES_$(BUILD))
++
++CFLAGS_base       ?= -Wall -Wextra -pthread -g3
++CFLAGS_release    ?= $(CFLAGS_base) $(DEFINES) $(INCLUDES) -O3
++CFLAGS_debug      ?= $(CFLAGS_base) $(DEFINES_debug) $(INCLUDES_debug)
++CFLAGS_coverage   ?= $(CFLAGS_base) $(DEFINES_coverage) $(INCLUDES_coverage) \
++                     -fprofile-arcs -ftest-coverage
++CFLAGS            ?= $(CFLAGS_$(BUILD))
++
++CXXFLAGS_base     ?= -std=c++11
++CXXFLAGS_release  ?= $(CXXFLAGS_base) $(CFLAGS)
++CXXFLAGS_debug    ?= $(CXXFLAGS_base) $(CFLAGS_debug)
++CXXFLAGS_coverage ?= $(CXXFLAGS_base) $(CFLAGS_coverage)
++CXXFLAGS          ?= $(CXXFLAGS_$(BUILD))
++
++LDFLAGS_base      ?=
++LDFLAGS_release   ?= $(LDFLAGS_base)
++LDFLAGS_debug     ?= $(LDFLAGS_base) -rdynamic
++LDFLAGS_coverage  ?= $(LDFLAGS_base)
++LDFLAGS           ?= $(LDFLAGS_$(BUILD))
++
++LIBS_base         ?= -lrt -ldl
++LIBS_release      ?= $(LIBS_base)
++LIBS_debug        ?= $(LIBS_base)
++LIBS_coverage     ?= $(LIBS_base)
++LIBS              ?= $(LIBS_$(BUILD))
+ 
+ TARGETS            = 
+ LIB_TARGETS        = libfilesystem
+diff --git a/src/filesystem/directory_iterator.h b/src/filesystem/directory_iterator.h
+index 29071b7..e7bfce7 100644
+--- a/src/filesystem/directory_iterator.h
++++ b/src/filesystem/directory_iterator.h
+@@ -6,8 +6,8 @@
+ #include <system_error>
+ #include <iterator>
+ 
+-#include "../utility/util.h"
+-#include "../utility/bitmask_operators.h"
++#include "utility/util.h"
++#include "utility/bitmask_operators.h"
+ 
+ #include "path.h"
+ #include "directory_entry.h"
+diff --git a/src/filesystem/file_status.h b/src/filesystem/file_status.h
+index abc56b7..d26dd85 100644
+--- a/src/filesystem/file_status.h
++++ b/src/filesystem/file_status.h
+@@ -1,7 +1,7 @@
+ #ifndef GUARD_FILE_STATUS_H
+ #define GUARD_FILE_STATUS_H 1
+ 
+-#include "../utility/bitmask_operators.h"
++#include "utility/bitmask_operators.h"
+ 
+ namespace filesystem {
+ inline namespace v1 {
+diff --git a/src/filesystem/fs_operations.cc b/src/filesystem/fs_operations.cc
+index 9fa51c0..cce5118 100644
+--- a/src/filesystem/fs_operations.cc
++++ b/src/filesystem/fs_operations.cc
+@@ -2,7 +2,7 @@
+ #include "directory_iterator.h"
+ #include "filesystem_error.h"
+ #include "recursive_directory_iterator.h"
+-#include "../time/timeutil.h"
++#include "time/timeutil.h"
+ 
+ #include <sys/stat.h>
+ #include <sys/statvfs.h>
+diff --git a/src/filesystem/fs_operations.h b/src/filesystem/fs_operations.h
+index 8ff7bdd..427a05d 100644
+--- a/src/filesystem/fs_operations.h
++++ b/src/filesystem/fs_operations.h
+@@ -4,7 +4,7 @@
+ #include <chrono>
+ #include <system_error>
+ 
+-#include "../utility/bitmask_operators.h"
++#include "utility/bitmask_operators.h"
+ #include "path.h"
+ #include "file_status.h"
+ 
+diff --git a/src/filesystem/path.h b/src/filesystem/path.h
+index e07dc37..7ac1565 100644
+--- a/src/filesystem/path.h
++++ b/src/filesystem/path.h
+@@ -10,7 +10,7 @@
+ #include <vector>
+ 
+ #include "path_traits.h"
+-#include "../codecvt/codecvt"
++#include "codecvt/codecvt"
+ 
+ namespace filesystem {
+ inline namespace v1 {
