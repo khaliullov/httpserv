@@ -16,7 +16,7 @@ static const struct option longOptions[] = {
 };
 
 //////////////////////////////////////////////////////////////////////
-void ServerConfig::usage()
+void server_config::usage()
 {
 	const int termWidth = 80;
 	char buffer[termWidth + 1];
@@ -69,7 +69,7 @@ void ServerConfig::usage()
 }
 
 //////////////////////////////////////////////////////////////////////
-ServerConfig::ServerConfig(int argc, char ** argv)
+server_config::server_config(int argc, char ** argv)
   : verbose(false)
   , programName(argv[0])
   , serverAddr("127.0.0.1")

@@ -5,12 +5,12 @@
 #include <string>
 
 //////////////////////////////////////////////////////////////////////
-class ServerConfig
+class server_config
 {
  public:
-	ServerConfig(int argc, char ** argv);
+	server_config(int argc, char ** argv);
 
-	virtual ~ServerConfig() { }
+	virtual ~server_config() { }
 
 	virtual void usage();
 

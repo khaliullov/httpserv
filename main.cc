@@ -5,6 +5,7 @@
 
 int main(int argc, char ** argv)
 {
-	ServerConfig config(argc, argv);
+	server_config config(argc, argv);
+
 	return 0;
 }
