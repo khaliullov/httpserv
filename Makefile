@@ -1,9 +1,10 @@
 ####
 # Project-specific details & settings
 ####
+export TOPDIR            = $(shell pwd)
 export BUILD            ?= release
 
-export INCLUDES_base     = -I $(shell pwd)
+export INCLUDES_base     = -I $(TOPDIR)/xos/src
 export INCLUDES_release  = $(INCLUDES_base)
 export INCLUDES_debug    = $(INCLUDES_base)
 export INCLUDES_coverage = $(INCLUDES_base)
@@ -45,7 +46,7 @@ export LIBS_debug        = $(LIBS_base)
 export LIBS_coverage     = $(LIBS_base)
 export LIBS              = $(LIBS_$(BUILD)) $(USERLIBS_$(BUILD))
 
-SUBDIRS           = codecvt filesystem
+SUBDIRS           = xos/src/codecvt xos/src/filesystem
 TARGETS           = statserv
 LIB_TARGETS       =
 
