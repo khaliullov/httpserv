@@ -1,0 +1,37 @@
+/* vim: set filetype=cpp: */
+
+#ifndef GUARD_FILESYSTEM_H
+#define GUARD_FILESYSTEM_H 1
+
+#include <cstdint>
+
+#include <iosfwd>
+#include <chrono>
+#include <system_error>
+
+#include "path_traits.h"
+#include "path.h"
+#include "filesystem_error.h"
+#include "fs_operations.h"
+
+namespace filesystem {
+inline namespace v1 {
+
+	template <class charT, class traits>
+	std::basic_ostream<charT, traits> &
+	operator << (std::basic_ostream<charT, traits> & os, const path & p);
+	
+	template <class charT, class traits>
+	std::basic_istream<charT, traits> &
+	operator >> (std::basic_istream<charT, traits> & is, const path & p);
+
+	template <class Source>
+	path u8path(const Source & source);
+
+	template <class InputIterator>
+	path u8path(InputIterator first, InputIterator last);
+
+} /*v1*/
+}/*filesystem*/
+
+#endif // GUARD_FILESYSTEM_H

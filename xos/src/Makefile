@@ -1,0 +1,59 @@
+all:
+	$(MAKE) -C filesystem
+	$(MAKE) -C codecvt
+	$(MAKE) -C unit
+
+debug:
+	$(MAKE) -C filesystem $@
+	$(MAKE) -C codecvt $@
+	$(MAKE) -C unit $@
+
+coverage:
+	$(MAKE) -C filesystem $@
+	$(MAKE) -C codecvt $@
+	$(MAKE) -C unit $@
+
+check: all
+	$(MAKE) -C unit $@
+
+debug-check: debug
+	$(MAKE) -C unit $@
+
+coverage-check: coverage
+	$(MAKE) -C unit $@
+
+coverage.info: coverage
+	@./unit/bin/unittest.coverage -p foo > /dev/null 2>&1 || true
+	@./unit/bin/unittest.coverage -o foo > /dev/null 2>&1 || true
+	@./unit/bin/unittest.coverage -t foo > /dev/null 2>&1 || true
+	@./unit/bin/unittest.coverage -h > /dev/null 2>&1 || true
+	@./unit/bin/unittest.coverage -r 1 -o none -l > /dev/null 2>&1
+	./unit/bin/unittest.coverage -p verbose
+	lcov --no-external --capture --directory . --output-file $@ > /dev/null
+	#lcov --capture --directory . --output-file $@ > /dev/null
+
+covreport: coverage.info
+	rm -rf coverage-report
+	genhtml $< --demangle-cpp --legend --output-directory coverage-report
+	#genhtml $< --legend --output-directory coverage-report
+	xdg-open coverage-report/index.html 2> /dev/null &
+
+codecount:
+	@echo "HEADERS:"
+	@find . -name '*.h' | xargs wc -l
+	@echo "SOURCE:"
+	@find . -name '*.cc' | xargs wc -l
+
+clean:
+	$(MAKE) -C filesystem clean
+	$(MAKE) -C unit clean
+	$(MAKE) -C codecvt clean
+	rm -f *.info
+
+realclean:
+	$(MAKE) -C filesystem realclean
+	$(MAKE) -C unit realclean
+	$(MAKE) -C codecvt realclean
+	rm -f *.info
+	rm -rf coverage-report
+
