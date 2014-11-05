@@ -3,6 +3,7 @@
 
 #include <deque>
 #include <string>
+#include "filesystem/filesystem"
 
 //////////////////////////////////////////////////////////////////////
 class server_config
@@ -15,7 +16,7 @@ class server_config
 	virtual void usage();
 
 	bool verbose;
-	std::string programName;
+	filesystem::path programName;
 	std::string serverAddr;
 	std::string serverPort;
 };

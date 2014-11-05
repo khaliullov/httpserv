@@ -23,7 +23,7 @@ void server_config::usage()
 
 	int bufLen = 0;
 	int prefixLen = snprintf(buffer, termWidth - bufLen, "usage: %s ",
-	                         programName.c_str());
+	                         programName.filename().c_str());
 
 	bufLen += prefixLen;
 
@@ -71,16 +71,12 @@ void server_config::usage()
 //////////////////////////////////////////////////////////////////////
 server_config::server_config(int argc, char ** argv)
   : verbose(false)
-  , programName(argv[0])
+  , programName(static_cast<const char*>(argv[0]))
   , serverAddr("127.0.0.1")
   , serverPort("8080")
 {
 	int c = -1;
 	int longIndex = -1;
-
-	std::string::size_type x = programName.find_last_of('/');
-	if (x != std::string::npos)
-		programName = programName.substr(x + 1);
 
 	// generate short option list
 	std::string shortOpts{":"};
