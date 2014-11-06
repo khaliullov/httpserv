@@ -8,6 +8,7 @@
 namespace net {
 
 //////////////////////////////////////////////////////////////////////
+#if 0
 class ainfo_error_category : public std::error_category
 {
  public:
@@ -26,22 +27,19 @@ class ainfo_error_category : public std::error_category
 	ainfo_error_category &
 	operator = (const ainfo_error_category&) = delete;
 };
+#endif
 
 //////////////////////////////////////////////////////////////////////
-const std::error_category & addrinfo_category()
-{
-	static ainfo_error_category the_category;
-	return the_category;
-}
+const std::error_category & addrinfo_category();
 
 //////////////////////////////////////////////////////////////////////
-std::system_error make_ainfo_error(int e, const char * what)
+inline std::system_error make_ainfo_error(int e, const char * what)
 	{ return std::system_error(e, net::addrinfo_category(), what); }
 
-std::system_error make_ainfo_error(int e, const std::string & what)
+inline std::system_error make_ainfo_error(int e, const std::string & what)
 	{ return std::system_error(e, net::addrinfo_category(), what); }
 
-std::system_error make_ainfo_error(int e)
+inline std::system_error make_ainfo_error(int e)
 	{ return std::system_error(e, net::addrinfo_category()); }
 
 } // namespace net

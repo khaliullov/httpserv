@@ -6,12 +6,14 @@
 #include <stdexcept>
 
 #include "serverconfig.h"
+#include "regexclass.h"
+
+const std::string default_port_number = "2080";
 
 static const struct option longOptions[] = {
 	{ "help",       no_argument,        0, 'h' },
-	{ "port",       required_argument,  0, 'P' },
-	{ "server",     required_argument,  0, 'S' },
 	{ "verbose",    no_argument,        0, 'v' },
+	{ "listen",     required_argument,  0, 'L' },
 	{ 0,            0,                  0, 0   }
 };
 
@@ -23,7 +25,7 @@ void server_config::usage()
 
 	int bufLen = 0;
 	int prefixLen = snprintf(buffer, termWidth - bufLen, "usage: %s ",
-	                         programName.filename().c_str());
+	                         program_name.filename().c_str());
 
 	bufLen += prefixLen;
 
@@ -71,9 +73,9 @@ void server_config::usage()
 //////////////////////////////////////////////////////////////////////
 server_config::server_config(int argc, char ** argv)
   : verbose(false)
-  , programName(static_cast<const char*>(argv[0]))
-  , serverAddr("127.0.0.1")
-  , serverPort("8080")
+  , program_name(static_cast<const char*>(argv[0]))
+  , port_number(default_port_number)
+  , server_address_list()
 {
 	int c = -1;
 	int longIndex = -1;
@@ -103,16 +105,55 @@ server_config::server_config(int argc, char ** argv)
 			exit(0);
 			break;
 
-		 case 'P':
-			serverPort = optarg;
-			break;
-
-		 case 'S':
-			serverAddr = optarg;
-			break;
-
 		 case 'v':
 			verbose = true;
+			break;
+
+		 case 'L':
+			{
+
+				static const char ip_port_pat[] =
+					"^(([0-9.]*)|(\\[([0-9a-zA-Z:]*)\\])):([[:alnum:]]+)$";
+				static util::regex re{ip_port_pat};
+
+				std::string subject(optarg);
+				std::string addr(subject);
+
+				auto matches = re.match(subject);
+
+				if ( ! matches.empty() )
+				{
+					int b, e;
+
+
+					if (matches[2].rm_so != -1 && matches[2].rm_eo != -1)
+					{
+						b = matches[2].rm_so;
+						e = matches[2].rm_eo;
+						addr = subject.substr(b, e - b);
+					} else if (matches[4].rm_so != -1 && matches[4].rm_eo != -1)
+					{
+						b = matches[4].rm_so;
+						e = matches[4].rm_eo;
+						addr = subject.substr(b, e - b);
+					} else
+					{
+						throw std::runtime_error("Bad -L argument");
+					}
+
+					b = matches[5].rm_so;
+					e = matches[5].rm_eo;
+					std::string port = subject.substr(b, e - b);
+
+					if (addr.empty())
+						throw std::runtime_error("Bad listen address");
+					server_address_list.emplace_back(addr, port);
+				} else
+				{
+					server_address_list.emplace_back(addr, port_number);
+				}
+
+			}
 			break;
 
 		 case ':':
@@ -143,4 +184,8 @@ server_config::server_config(int argc, char ** argv)
 		}
 		longIndex = -1;
 	}
+
+	if (server_address_list.empty())
+		server_address_list =
+			net::address::list_passive_addresses(SOCK_STREAM, port_number);
 }

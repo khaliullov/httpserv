@@ -27,28 +27,28 @@ class address
 
  public:
 	address(const std::string & address, const std::string & service)
-	  : sockaddrlen(0)
-	  , sockaddr()
+	  : m_sockaddrlen(0)
+	  , m_sockaddr()
 	  , m_address(address)
 	  , m_service(service)
 	{ }
 
 	address(const sockaddr * addr, socklen_t addrlen)
-	  : sockaddrlen(addrlen)
-	  , sockaddr(sockaddrlen ? new char[sockaddrlen] : nullptr)
+	  : m_sockaddrlen(addrlen)
+	  , m_sockaddr(m_sockaddrlen ? new char[m_sockaddrlen] : nullptr)
 	  , m_address()
 	  , m_service()
 	{
-		memcpy(sockaddr.get(), addr, addrlen);
+		memcpy(m_sockaddr.get(), addr, addrlen);
 	}
 
 	address(const address & other)
-	  : sockaddrlen(other.sockaddrlen)
-	  , sockaddr(sockaddrlen ? new char[sockaddrlen] : nullptr)
+	  : m_sockaddrlen(other.m_sockaddrlen)
+	  , m_sockaddr(m_sockaddrlen ? new char[m_sockaddrlen] : nullptr)
 	  , m_address(other.m_address)
 	  , m_service(other.m_service)
 	{
-		memcpy(sockaddr.get(), other.sockaddr.get(), sockaddrlen);
+		memcpy(m_sockaddr.get(), other.m_sockaddr.get(), m_sockaddrlen);
 	}
 
 	~address()
@@ -59,8 +59,8 @@ class address
 		const int buflen = 80;
 		char buffer1[80], buffer2[80];
 
-		int rc = getnameinfo(reinterpret_cast<struct sockaddr*>(sockaddr.get()),
-		                     sockaddrlen, buffer1, buflen,
+		int rc = getnameinfo(reinterpret_cast<struct sockaddr*>(m_sockaddr.get()),
+		                     m_sockaddrlen, buffer1, buflen,
 		                     buffer2, buflen, flags);
 
 		if (rc) throw net::make_ainfo_error(rc, __func__);
@@ -69,10 +69,10 @@ class address
 	}
 
 	const sockaddr * addr() const
-	{ return reinterpret_cast<struct sockaddr*>(sockaddr.get()); }
+	{ return reinterpret_cast<struct sockaddr*>(m_sockaddr.get()); }
 
 	socklen_t addrlen() const
-	{ return sockaddrlen; }
+	{ return m_sockaddrlen; }
 
 	void print()
 	{
@@ -109,8 +109,8 @@ class address
 	}
 
  protected:
-	socklen_t sockaddrlen;
-	std::unique_ptr<char[]> sockaddr;
+	socklen_t m_sockaddrlen;
+	std::unique_ptr<char[]> m_sockaddr;
 	std::string m_address;
 	std::string m_service;
 };
