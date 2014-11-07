@@ -14,6 +14,7 @@ static const struct option longOptions[] = {
 	{ "help",       no_argument,        0, 'h' },
 	{ "verbose",    no_argument,        0, 'v' },
 	{ "listen",     required_argument,  0, 'L' },
+	{ "port",       required_argument,  0, 'P' },
 	{ 0,            0,                  0, 0   }
 };
 
@@ -109,22 +110,24 @@ server_config::server_config(int argc, char ** argv)
 			verbose = true;
 			break;
 
+		 case 'P':
+			port_number = optarg;
+			break;
+
 		 case 'L':
 			{
-
 				static const char ip_port_pat[] =
 					"^(([0-9.]*)|(\\[([0-9a-zA-Z:]*)\\])):([[:alnum:]]+)$";
 				static util::regex re{ip_port_pat};
 
 				std::string subject(optarg);
 				std::string addr(subject);
-
 				auto matches = re.match(subject);
+				std::vector<net::address> tmplist;
 
 				if ( ! matches.empty() )
 				{
 					int b, e;
-
 
 					if (matches[2].rm_so != -1 && matches[2].rm_eo != -1)
 					{
@@ -147,12 +150,17 @@ server_config::server_config(int argc, char ** argv)
 
 					if (addr.empty())
 						throw std::runtime_error("Bad listen address");
-					server_address_list.emplace_back(addr, port);
+
+					tmplist = net::address::get_addresses(SOCK_STREAM, addr,
+					                                      port);
 				} else
 				{
-					server_address_list.emplace_back(addr, port_number);
+					tmplist = net::address::get_addresses(SOCK_STREAM, addr,
+					                                      port_number);
 				}
 
+				for (auto && elem : tmplist)
+					server_address_list.emplace_back(elem);
 			}
 			break;
 

@@ -17,9 +17,11 @@ class server_config
 	virtual void usage();
 
 	bool verbose;
+
 	filesystem::path program_name;
 
 	std::string port_number;
+
 	std::vector<net::address> server_address_list;
 };
 
