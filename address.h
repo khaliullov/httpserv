@@ -16,6 +16,40 @@ namespace net {
 
 class address
 {
+ public:
+	address(const std::string & address, const std::string & service,
+                 const sockaddr * a, socklen_t length);
+
+	address(const sockaddr * addr, socklen_t addrlen);
+
+	address(const address & other);
+
+	address(address && other) noexcept;
+
+	~address();
+	
+	address & operator = (const address & other);
+
+	address & operator = (address && other) noexcept;
+
+	void resolve_binary_addr(int flags = (NI_NUMERICSERV | NI_NUMERICHOST));
+
+	const sockaddr * get_addr() const
+	{ return reinterpret_cast<struct sockaddr*>(m_sockaddr.get()); }
+
+	socklen_t get_addrlen() const
+	{ return m_sockaddrlen; }
+
+	std::string str() const;
+
+	static std::vector<address>
+	get_addresses(const int type,
+	              const std::string & node,
+	              const std::string & portNumber);
+
+	static std::vector<address>
+	list_passive_addresses(const int type, const std::string & portNumber);
+
  protected:
 	struct FreeInfoFunctor {
 		void operator () (struct addrinfo * p) { freeaddrinfo(p); }
@@ -28,33 +62,6 @@ class address
 	std::string m_address;
 	std::string m_service;
 
- public:
-	address(const std::string & address, const std::string & service);
-
-	address(const sockaddr * addr, socklen_t addrlen);
-
-	address(const address & other);
-
-	~address();
-
-	void resolve_sock_addr(int flags = (NI_NUMERICSERV));
-
-	const sockaddr * addr() const
-	{
-		if (!m_sockaddr)
-		{
-			
-		}
-		return reinterpret_cast<struct sockaddr*>(m_sockaddr.get());
-	}
-
-	socklen_t addrlen() const
-	{ return m_sockaddrlen; }
-
-	void print();
-
-	static std::vector<address>
-	list_passive_addresses(const int type, const std::string & portNumber);
 };
 
 } // namespace net
