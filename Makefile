@@ -44,13 +44,14 @@ export LIBS_base         = -L $(shell pwd)/lib -lrt -ldl $(USERLIBS_$(BUILD))
 export LIBS_release      = $(LIBS_base)
 export LIBS_debug        = $(LIBS_base)
 export LIBS_coverage     = $(LIBS_base)
+export LIBS              = $(LIBS_$(BUILD))
 
 SUBDIRS           = xos/src/codecvt xos/src/filesystem
 TARGETS           = statserv
 LIB_TARGETS       =
 
 statserv_OBJS     = main.o serverconfig.o regexclass.o \
-address.o net_error.o
+                    address.o net_error.o
 
 include Makefile.include
 
