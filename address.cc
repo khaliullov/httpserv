@@ -40,8 +40,7 @@ address::address(address && other) noexcept
   , m_sockaddr(std::move(other.m_sockaddr))
   , m_address(std::move(other.m_address))
   , m_service(std::move(other.m_service))
-{
-}
+	{ }
 
 //////////////////////////////////////////////////////////////////////
 address::~address()
@@ -69,12 +68,10 @@ address & address::operator = (const address & other)
 address & address::operator = (address && other) noexcept
 {
 	using std::swap;
-
 	swap(m_sockaddrlen, other.m_sockaddrlen);
 	swap(m_sockaddr, other.m_sockaddr);
 	swap(m_address, other.m_address);
 	swap(m_service, other.m_service);
-
 	return *this;
 }
 
@@ -135,7 +132,7 @@ address::get_addresses(const int type,
 
 //////////////////////////////////////////////////////////////////////
 std::vector<address>
-address::list_passive_addresses(const int type, const std::string & portNumber)
+address::passive_addresses(const int type, const std::string & portNumber)
 {
 	std::vector<address> retlist;
 	int rc = 0;

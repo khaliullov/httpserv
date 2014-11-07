@@ -42,20 +42,19 @@ class address
 
 	std::string str() const;
 
-	static std::vector<address>
-	get_addresses(const int type,
-	              const std::string & node,
-	              const std::string & portNumber);
+	static std::vector<address> get_addresses(const int type,
+	                                          const std::string & node,
+	                                          const std::string & portNumber);
 
-	static std::vector<address>
-	list_passive_addresses(const int type, const std::string & portNumber);
+	static std::vector<address> passive_addresses(const int type,
+	                                              const std::string & port);
 
  protected:
-	struct FreeInfoFunctor {
+	struct free_addrinfo_f {
 		void operator () (struct addrinfo * p) { freeaddrinfo(p); }
 	};
 
-	typedef std::unique_ptr<struct addrinfo, FreeInfoFunctor> address_list;
+	typedef std::unique_ptr<struct addrinfo, free_addrinfo_f> address_list;
 
 	socklen_t m_sockaddrlen;
 	std::unique_ptr<char[]> m_sockaddr;

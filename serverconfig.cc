@@ -195,5 +195,5 @@ server_config::server_config(int argc, char ** argv)
 
 	if (server_address_list.empty())
 		server_address_list =
-			net::address::list_passive_addresses(SOCK_STREAM, port_number);
+			net::address::passive_addresses(SOCK_STREAM, port_number);
 }
