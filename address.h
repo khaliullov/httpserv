@@ -17,8 +17,17 @@ namespace net {
 class address
 {
  public:
-	address(const std::string & address, const std::string & service,
-                 const sockaddr * a, socklen_t length);
+	address()
+	  : m_sockaddrlen(0)
+	  , m_sockaddr()
+	  , m_address()
+	  , m_service()
+		{ }
+
+	address(const std::string & address,
+	        const std::string & service,
+            const sockaddr * a,
+	        socklen_t length);
 
 	address(const sockaddr * addr, socklen_t addrlen);
 

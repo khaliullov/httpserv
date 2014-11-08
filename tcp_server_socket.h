@@ -3,6 +3,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <tuple>
 #include <vector>
 #include <memory>
 
@@ -54,6 +55,8 @@ class socket
 
 	virtual ~socket();
 
+	operator int () { return fd; }
+
  protected:
 	int fd;
 };
@@ -73,6 +76,8 @@ class tcp_server_socket : public net::socket
 	tcp_server_socket(tcp_server_socket && other) noexcept;
 
 	tcp_server_socket & operator = (tcp_server_socket && other) noexcept;
+
+	std::tuple<int, address> accept(int flags = SOCK_CLOEXEC);
 
  protected:
 	address m_address;

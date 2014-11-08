@@ -1,3 +1,5 @@
+#include <sys/types.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
 #include "tcp_server_socket.h"
@@ -113,6 +115,23 @@ tcp_server_socket::operator = (tcp_server_socket && other) noexcept
 	net::socket::operator=(std::move(other));
 	swap(m_address, other.m_address);
 	return *this;
+}
+
+std::tuple<int, address> tcp_server_socket::accept(int flags)
+{
+	int client_fd = -1;
+	struct sockaddr_storage buf;
+	socklen_t len = sizeof(sockaddr_storage);
+
+	
+	if ((client_fd = accept4(fd, reinterpret_cast<sockaddr*>(&buf),
+	                         &len, flags)) < 0)
+	{
+		throw make_syserr("Could not accept connection");
+	}
+
+	return std::make_tuple(client_fd,
+	                       address{reinterpret_cast<sockaddr*>(&buf), len});
 }
 
 } // namespace net
