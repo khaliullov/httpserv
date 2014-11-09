@@ -55,7 +55,7 @@ class socket
 
 	virtual ~socket();
 
-	operator int () { return fd; }
+	operator int () const { return fd; }
 
 	bool is_nonblocking();
 
