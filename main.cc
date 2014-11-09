@@ -8,6 +8,8 @@
 #include "serverconfig.h"
 #include "tcp_server_socket.h"
 
+#define MYDEBUG 1
+
 //const int all_events = (EPOLLIN | EPOLLOUT | 
 //                        EPOLLRDHUP | EPOLLPRI | EPOLLERR | EPOLLHUP);
 
@@ -15,7 +17,20 @@ struct event
 {
 	event() { }
 	virtual ~event() { }
-	virtual void action(uint32_t ) { }
+
+	event(const event &) = delete;
+	event(event &&); 
+
+	event & operator = (const event &) = delete;
+	event & operator = (event &&)
+	{ return *this; }
+
+#if MYDEBUG
+	virtual void action(uint32_t events)
+	{ printf ("base action called mask = %08x\n", events); }
+#else
+	virtual void action(uint32_t) = 0;
+#endif
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -27,7 +42,7 @@ struct connection_event : public event
 
 	virtual ~connection_event () { }
 
-	virtual void action(uint32_t events)
+	virtual void action(uint32_t events) override
 	{
 		int fd = -1;
 		net::address addr;
@@ -51,12 +66,30 @@ struct connection_event : public event
 	net::tcp_server_socket server_sock;
 };
 
+namespace net {
+	typedef int client_socket;
+}
+
+struct client_event : public event
+{
+	client_event(net::client_socket && sock)
+	;
+
+	virtual ~client_event();
+
+	virtual void action(uint32_t events) override;
+
+	client_socket client_sock;
+};
+
 //////////////////////////////////////////////////////////////////////
 class event_loop
 {
  public:
-	event_loop(size_t max_events = 128, int flags = EPOLL_CLOEXEC)
+	event_loop(int events = 128, int flags = EPOLL_CLOEXEC)
 	  : evfd(epoll_create1(flags))
+	  , max_events(events)
+	  , ev_list(new epoll_event[events])
 	{
 		if (evfd < 0)
 			throw make_syserr("epoll_create() failed");
@@ -66,14 +99,27 @@ class event_loop
 	{
 		if (evfd >= 0) close(evfd);
 	}
+
+	void add_event(event && e);
+	void delete_event();
 	
 	void run()
 	{
+		int count = 0;
+		while ((count = epoll_wait(evfd, ev_list.get(), max_events, -1)) > 0)
+		{
+			for (int i = 0; i < count; ++i)
+			{
+				event * e = reinterpret_cast<event*>(ev_list[i].data.ptr);
+				e->action(ev_list[i].events);
+			}
+		}
 	}
 
  private:
 	int evfd;
-
+	int max_events;
+	std::unique_ptr<struct epoll_event[]> ev_list;
 };
 
 //////////////////////////////////////////////////////////////////////
