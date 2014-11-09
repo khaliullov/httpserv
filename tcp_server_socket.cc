@@ -53,11 +53,13 @@ void socket_option::set(int fd) const
 //
 socket::socket(int domain, int type, int protocol)
   : fd(::socket(domain, type, protocol))
+  , flags(type & (SOCK_NONBLOCK | SOCK_CLOEXEC))
 {
 	if (fd < 0) throw std::runtime_error("Could not create socket");
 }
 
-socket::socket(int domain, int type, int protocol, const socket_option_list & list)
+socket::socket(int domain, int type, int protocol,
+               const socket_option_list & list)
   : socket(domain, type, protocol)
 {
 	set_options(list);
@@ -65,6 +67,7 @@ socket::socket(int domain, int type, int protocol, const socket_option_list & li
 
 socket::socket(socket && other) noexcept
   : fd(other.fd)
+  , flags(other.flags)
 {
 	other.fd = -1;
 }
@@ -72,6 +75,7 @@ socket::socket(socket && other) noexcept
 socket & socket::operator = (socket && other) noexcept
 {
 	std::swap(fd, other.fd);
+	std::swap(flags, other.flags);
 	return *this;
 }
 
@@ -84,22 +88,29 @@ void socket::set_options(const socket_option_list & list)
 socket::~socket()
 	{ if (fd > 0) ::close(fd); }
 
+bool socket::is_nonblocking()
+	{ return (flags & SOCK_NONBLOCK); }
+
+bool socket::will_close_on_exec()
+	{ return (flags & SOCK_CLOEXEC); }
+
 //////////////////////////////////////////////////////////////////////
 // tcp_server_socket
 //
-tcp_server_socket::tcp_server_socket(const address & a)
-  : tcp_server_socket(a, socket_option_list{})
+tcp_server_socket::tcp_server_socket(const address & a, int flags)
+  : tcp_server_socket(a, socket_option_list{}, flags)
 	{ }
 
 tcp_server_socket::tcp_server_socket(const address & a,
-                                     const socket_option_list & opts)
-  : socket(a.get_addr()->sa_family, SOCK_STREAM, 0, opts)
+                                     const socket_option_list & opts,
+                                     int flags)
+  : socket(a.get_addr()->sa_family, SOCK_STREAM | flags, 0, opts)
   , m_address(a)
 {
 	if (bind(fd, m_address.get_addr(), m_address.get_addrlen()) != 0)
 		throw make_syserr("Could not bind to socket");
 
-	if (listen(fd, 5) != 0)
+	if (listen(fd, 128) != 0)
 		throw make_syserr("Could not bind to listen");
 }
 
@@ -119,19 +130,25 @@ tcp_server_socket::operator = (tcp_server_socket && other) noexcept
 
 std::tuple<int, address> tcp_server_socket::accept(int flags)
 {
-	int client_fd = -1;
 	struct sockaddr_storage buf;
 	socklen_t len = sizeof(sockaddr_storage);
 
+	std::tuple<int, address> ret;
+
 	
-	if ((client_fd = accept4(fd, reinterpret_cast<sockaddr*>(&buf),
-	                         &len, flags)) < 0)
+	std::get<0>(ret) = accept4(fd, reinterpret_cast<sockaddr*>(&buf),
+	                           &len, flags);
+
+	if (std::get<0>(ret) < 0)
 	{
-		throw make_syserr("Could not accept connection");
+		if ( ! (this->is_nonblocking() && errno == EAGAIN) )
+			throw make_syserr("Could not accept connection");
+	} else
+	{
+		std::get<1>(ret) = address{reinterpret_cast<sockaddr*>(&buf), len};
 	}
 
-	return std::make_tuple(client_fd,
-	                       address{reinterpret_cast<sockaddr*>(&buf), len});
+	return ret;
 }
 
 } // namespace net

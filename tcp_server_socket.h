@@ -57,17 +57,26 @@ class socket
 
 	operator int () { return fd; }
 
+	bool is_nonblocking();
+
+	bool will_close_on_exec();
+
  protected:
 	int fd;
+	int flags;
 };
 
 //////////////////////////////////////////////////////////////////////
 class tcp_server_socket : public net::socket
 {
  public:
-	tcp_server_socket(const address & a);
+	static const int default_flags = (SOCK_CLOEXEC|SOCK_NONBLOCK);
 
-	tcp_server_socket(const address & a, const socket_option_list & opts);
+	tcp_server_socket(const address & a, int flags = default_flags);
+
+	tcp_server_socket(const address & a,
+	                  const socket_option_list & opts,
+	                  int flags = default_flags);
 
 	tcp_server_socket(const tcp_server_socket &) = delete;
 
@@ -77,7 +86,8 @@ class tcp_server_socket : public net::socket
 
 	tcp_server_socket & operator = (tcp_server_socket && other) noexcept;
 
-	std::tuple<int, address> accept(int flags = SOCK_CLOEXEC);
+	std::tuple<int, address> accept(int flags = default_flags);
+
 
  protected:
 	address m_address;
