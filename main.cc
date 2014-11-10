@@ -5,6 +5,8 @@
 #include <set>
 #include <vector>
 
+#include <readline/readline.h>
+
 #include "utility/util.h"
 #include "serverconfig.h"
 #include "tcp_server_socket.h"
@@ -75,6 +77,46 @@ struct connection_listener : public event_listener
 	net::tcp_server_socket server_sock;
 };
 
+extern "C" void readlineCB(char * s)
+{
+	printf("READ CMD %s\n", s);
+	std::string cmd(s);
+	free(s);
+	if (cmd == "quit")
+		throw std::runtime_error("quiting");
+}
+
+struct interative_listener : public event_listener
+{
+	interative_listener(int input_fd)
+	  : infd(input_fd)
+	{
+		rl_callback_handler_install("statserv> ", readlineCB);
+	}
+
+	virtual ~interative_listener()
+	{
+		rl_callback_handler_remove();
+		close(infd);
+	}
+
+	virtual void action(uint32_t events)
+	{
+		if (events & EPOLLIN)
+		{
+			rl_callback_read_char();
+		}
+	}
+
+	virtual uint32_t get_default_events() const
+		{ return (EPOLLIN); }
+
+	int descriptor() const override
+		{ return infd; }
+
+	int infd;
+};
+
 namespace net {
 	typedef int client_socket;
 }
@@ -122,7 +164,7 @@ class event_loop
 		int count = 0;
 		while ((count = epoll_wait(evfd, ev_buffer.get(), max_events, -1)) > 0)
 		{
-			printf("%s: Read %d events\n", __func__, count);
+//			printf("%s: Read %d events\n", __func__, count);
 
 			for (int i = 0; i < count; ++i)
 			{
@@ -131,7 +173,7 @@ class event_loop
 
 				listener->action(ev_buffer[i].events);
 			}
-			printf("Waiting for event...\n");
+//			printf("Waiting for event...\n");
 		}
 	}
 
@@ -147,30 +189,40 @@ class event_loop
 //////////////////////////////////////////////////////////////////////
 int main(int argc, char ** argv)
 {
-	server_config config(argc, argv);
+	try { 
+		server_config config(argc, argv);
 
-	event_loop evloop;
+		event_loop evloop;
 
-	for (auto & addr : config.server_address_list)
-	{
-		net::socket_option_list opts;
-		opts.emplace_back(SOL_SOCKET, SO_REUSEADDR, 1);
-
-		printf("Server listening on address %s\n", addr.str().c_str());
-
-		std::shared_ptr<event_listener> ptr;
-
-		if (  addr.get_addr()->sa_family == AF_INET6
-		   && config.server_address_list.size() != 1)
+		for (auto & addr : config.server_address_list)
 		{
-			opts.emplace_back(IPPROTO_IPV6, IPV6_V6ONLY, 1);
+			net::socket_option_list opts;
+			opts.emplace_back(SOL_SOCKET, SO_REUSEADDR, 1);
+
+			printf("Server listening on address %s\n", addr.str().c_str());
+
+			std::shared_ptr<event_listener> ptr;
+
+			if (  addr.get_addr()->sa_family == AF_INET6
+			   && config.server_address_list.size() != 1)
+			{
+				opts.emplace_back(IPPROTO_IPV6, IPV6_V6ONLY, 1);
+			}
+
+			ptr.reset(new connection_listener(
+			                net::tcp_server_socket(addr, opts)));
+			evloop.add_event(ptr);
 		}
 
-		ptr.reset(new connection_listener(net::tcp_server_socket(addr, opts)));
-		evloop.add_event(ptr);
-	}
+		std::shared_ptr<event_listener> inter(
+			new interative_listener(STDIN_FILENO));
+		evloop.add_event(inter);
 
-	evloop.run();
+		evloop.run();
+	} catch (std::exception & e)
+	{
+		printf("Caught exception: %s\n", e.what());
+	}
 
 	return 0;
 }
