@@ -10,127 +10,15 @@
 #include "utility/util.h"
 #include "serverconfig.h"
 #include "tcp_server_socket.h"
+#include "event.h"
 
 #define MYDEBUG 1
 
 //const int all_events = (EPOLLIN | EPOLLOUT | 
 //                        EPOLLRDHUP | EPOLLPRI | EPOLLERR | EPOLLHUP);
 
-//////////////////////////////////////////////////////////////////////
-struct event_listener
-{
-	event_listener() { }
-
-	virtual ~event_listener() { }
-
-	event_listener(const event_listener &) = delete;
-
-	event_listener & operator = (const event_listener &) = delete;
-
-	event_listener(event_listener &&) { }
-
-	event_listener & operator = (event_listener &&) { return *this; }
-
-	virtual void action(uint32_t events) = 0;
-
-	virtual uint32_t get_default_events() const = 0;
-
-	virtual int descriptor() const = 0;
-};
-
-//////////////////////////////////////////////////////////////////////
-struct connection_listener : public event_listener
-{
-	connection_listener(net::tcp_server_socket && sock)
-	  : server_sock(std::move(sock))
-	{ }
-
-	virtual ~connection_listener() { }
-
-	virtual void action(uint32_t events) override
-	{
-		int fd = -1;
-		net::address addr;
-
-		printf("event mask = %08x\n", events);
-
-		do {
-			std::tie(fd, addr) = server_sock.accept();
-
-			if (fd >= 0)
-			{
-				printf("Accepted client connection from %s - fd = %d, "
-				       "server fd = %d\n",
-				       addr.str().c_str(), fd, (int) server_sock);
-
-				close(fd);
-			}
-		} while (server_sock.is_nonblocking() && fd >= 0);
-	}
-
-	virtual uint32_t get_default_events() const
-		{ return (EPOLLIN | EPOLLET); }
-
-	int descriptor() const override
-		{ return server_sock; }
-
-	net::tcp_server_socket server_sock;
-};
-
-extern "C" void readlineCB(char * s)
-{
-	printf("READ CMD %s\n", s);
-	std::string cmd(s);
-	free(s);
-	if (cmd == "quit")
-		throw std::runtime_error("quiting");
-}
-
-struct interative_listener : public event_listener
-{
-	interative_listener(int input_fd)
-	  : infd(input_fd)
-	{
-		rl_callback_handler_install("statserv> ", readlineCB);
-	}
-
-	virtual ~interative_listener()
-	{
-		rl_callback_handler_remove();
-		close(infd);
-	}
-
-	virtual void action(uint32_t events)
-	{
-		if (events & EPOLLIN)
-		{
-			rl_callback_read_char();
-		}
-	}
-
-	virtual uint32_t get_default_events() const
-		{ return (EPOLLIN); }
-
-	int descriptor() const override
-		{ return infd; }
-
-	int infd;
-};
-
-namespace net {
-	typedef int client_socket;
-}
-
-struct client_event : public event_listener
-{
-	client_event(net::client_socket && sock) ;
-
-	virtual ~client_event();
-
-	void action(uint32_t events) override;
-
-	net::client_socket client_sock;
-};
+#if 0
+struct event_listener;
 
 //////////////////////////////////////////////////////////////////////
 class event_loop
@@ -185,6 +73,124 @@ class event_loop
 	int max_events;
 	std::unique_ptr<struct epoll_event[]> ev_buffer;
 };
+
+//////////////////////////////////////////////////////////////////////
+struct event_listener
+{
+	event_listener() { }
+
+	virtual ~event_listener() { }
+
+	event_listener(const event_listener &) = delete;
+
+	event_listener & operator = (const event_listener &) = delete;
+
+	event_listener(event_listener &&) { }
+
+	event_listener & operator = (event_listener &&) { return *this; }
+
+	virtual void action(event_loop & loop, uint32_t events) = 0;
+
+	virtual uint32_t get_default_events() const = 0;
+
+	virtual int descriptor() const = 0;
+};
+#endif
+
+//////////////////////////////////////////////////////////////////////
+struct connection_listener : public event_listener
+{
+	connection_listener(net::tcp_server_socket && sock)
+	  : server_sock(std::move(sock))
+	{ }
+
+	virtual ~connection_listener() { }
+
+	virtual void action(event_loop &, uint32_t events) override
+	{
+		int fd = -1;
+		net::address addr;
+
+		printf("event mask = %08x\n", events);
+
+		do {
+			std::tie(fd, addr) = server_sock.accept();
+
+			if (fd >= 0)
+			{
+				printf("Accepted client connection from %s - fd = %d, "
+				       "server fd = %d\n",
+				       addr.str().c_str(), fd, (int) server_sock);
+
+				close(fd);
+			}
+		} while (server_sock.is_nonblocking() && fd >= 0);
+	}
+
+	virtual uint32_t get_default_events() const
+		{ return (EPOLLIN | EPOLLET); }
+
+	int descriptor() const override
+		{ return server_sock; }
+
+	net::tcp_server_socket server_sock;
+};
+
+extern "C" void readlineCB(char * s)
+{
+	printf("READ CMD %s\n", s);
+	std::string cmd(s);
+	free(s);
+	if (cmd == "quit")
+		throw std::runtime_error("quiting");
+}
+
+struct interative_listener : public event_listener
+{
+	interative_listener(int input_fd)
+	  : infd(input_fd)
+	{
+		rl_callback_handler_install("statserv> ", readlineCB);
+	}
+
+	virtual ~interative_listener()
+	{
+		rl_callback_handler_remove();
+		close(infd);
+	}
+
+	virtual void action(event_loop &, uint32_t events)
+	{
+		if (events & EPOLLIN)
+		{
+			rl_callback_read_char();
+		}
+	}
+
+	virtual uint32_t get_default_events() const
+		{ return (EPOLLIN); }
+
+	int descriptor() const override
+		{ return infd; }
+
+	int infd;
+};
+
+namespace net {
+	typedef int client_socket;
+}
+
+struct client_event : public event_listener
+{
+	client_event(net::client_socket && sock) ;
+
+	virtual ~client_event();
+
+	void action(event_loop &, uint32_t events) override;
+
+	net::client_socket client_sock;
+};
+
 
 //////////////////////////////////////////////////////////////////////
 int main(int argc, char ** argv)
