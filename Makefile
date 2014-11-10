@@ -51,6 +51,7 @@ TARGETS           = statserv
 LIB_TARGETS       =
 
 statserv_OBJS     = main.o serverconfig.o regexclass.o \
+                    http_server.o http_parser.o \
                     address.o net_error.o tcp_server_socket.o
 
 include Makefile.include

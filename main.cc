@@ -63,7 +63,7 @@ struct connection_listener : public event_listener
 
 				close(fd);
 			}
-		} while (fd >= 0);
+		} while (server_sock.is_nonblocking() && fd >= 0);
 	}
 
 	virtual uint32_t get_default_events() const
