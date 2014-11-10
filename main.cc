@@ -60,7 +60,7 @@ struct connection_event : public event
 
 				close(fd);
 			}
-		} while (fd >= 0);
+		} while (server_sock.is_nonblocking() && fd >= 0);
 	}
 
 	net::tcp_server_socket server_sock;
@@ -79,7 +79,7 @@ struct client_event : public event
 
 	virtual void action(uint32_t events) override;
 
-	client_socket client_sock;
+	net::client_socket client_sock;
 };
 
 //////////////////////////////////////////////////////////////////////
