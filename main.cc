@@ -11,91 +11,9 @@
 #include "serverconfig.h"
 #include "tcp_server_socket.h"
 #include "event.h"
+#include "interactive_listener.h"
 
 #define MYDEBUG 1
-
-//const int all_events = (EPOLLIN | EPOLLOUT | 
-//                        EPOLLRDHUP | EPOLLPRI | EPOLLERR | EPOLLHUP);
-
-#if 0
-struct event_listener;
-
-//////////////////////////////////////////////////////////////////////
-class event_loop
-{
- public:
-	event_loop(int events = 128, int flags = EPOLL_CLOEXEC)
-	  : evfd(epoll_create1(flags))
-	  , max_events(events)
-	  , ev_buffer(new epoll_event[events])
-		{ if (evfd < 0) throw make_syserr("epoll_create() failed"); }
-
-	~event_loop()
-		{ if (evfd >= 0) close(evfd); }
-
-	void add_event(std::shared_ptr<event_listener> & e)
-	{
-		event_list.insert(e);
-
-		struct epoll_event ev;
-		memset(&ev, 0, sizeof(ev));
-		ev.events = e->get_default_events();
-		ev.data.ptr = e.get();
-
-		epoll_ctl(evfd, EPOLL_CTL_ADD, e->descriptor(),  &ev);
-	}
-
-	void delete_event();
-	
-	void run()
-	{
-		int count = 0;
-		while ((count = epoll_wait(evfd, ev_buffer.get(), max_events, -1)) > 0)
-		{
-//			printf("%s: Read %d events\n", __func__, count);
-
-			for (int i = 0; i < count; ++i)
-			{
-				event_listener * listener =
-				  reinterpret_cast<event_listener*>(ev_buffer[i].data.ptr);
-
-				listener->action(ev_buffer[i].events);
-			}
-//			printf("Waiting for event...\n");
-		}
-	}
-
- private:
-	int evfd;
-
-	std::set<std::shared_ptr<event_listener>> event_list;
-
-	int max_events;
-	std::unique_ptr<struct epoll_event[]> ev_buffer;
-};
-
-//////////////////////////////////////////////////////////////////////
-struct event_listener
-{
-	event_listener() { }
-
-	virtual ~event_listener() { }
-
-	event_listener(const event_listener &) = delete;
-
-	event_listener & operator = (const event_listener &) = delete;
-
-	event_listener(event_listener &&) { }
-
-	event_listener & operator = (event_listener &&) { return *this; }
-
-	virtual void action(event_loop & loop, uint32_t events) = 0;
-
-	virtual uint32_t get_default_events() const = 0;
-
-	virtual int descriptor() const = 0;
-};
-#endif
 
 //////////////////////////////////////////////////////////////////////
 struct connection_listener : public event_listener
@@ -136,46 +54,8 @@ struct connection_listener : public event_listener
 	net::tcp_server_socket server_sock;
 };
 
-extern "C" void readlineCB(char * s)
-{
-	printf("READ CMD %s\n", s);
-	std::string cmd(s);
-	free(s);
-	if (cmd == "quit")
-		throw std::runtime_error("quiting");
-}
 
-struct interative_listener : public event_listener
-{
-	interative_listener(int input_fd)
-	  : infd(input_fd)
-	{
-		rl_callback_handler_install("statserv> ", readlineCB);
-	}
-
-	virtual ~interative_listener()
-	{
-		rl_callback_handler_remove();
-		close(infd);
-	}
-
-	virtual void action(event_loop &, uint32_t events)
-	{
-		if (events & EPOLLIN)
-		{
-			rl_callback_read_char();
-		}
-	}
-
-	virtual uint32_t get_default_events() const
-		{ return (EPOLLIN); }
-
-	int descriptor() const override
-		{ return infd; }
-
-	int infd;
-};
-
+//////////////////////////////////////////////////////////////////////
 namespace net {
 	typedef int client_socket;
 }
@@ -221,7 +101,8 @@ int main(int argc, char ** argv)
 		}
 
 		std::shared_ptr<event_listener> inter(
-			new interative_listener(STDIN_FILENO));
+			new interactive_listener(STDIN_FILENO));
+
 		evloop.add_event(inter);
 
 		evloop.run();

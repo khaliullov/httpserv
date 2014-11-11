@@ -58,6 +58,14 @@ socket::socket(int domain, int type, int protocol)
 	if (fd < 0) throw std::runtime_error("Could not create socket");
 }
 
+// For creating sockets from accept()
+socket::socket(int _fd, int _flags, const socket_option_list & list)
+  : fd(_fd)
+  , flags(_flags)
+{
+	set_options(list);
+}
+
 socket::socket(int domain, int type, int protocol,
                const socket_option_list & list)
   : socket(domain, type, protocol)

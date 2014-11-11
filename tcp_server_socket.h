@@ -62,6 +62,8 @@ class socket
 	bool will_close_on_exec();
 
  protected:
+	socket(int fd, int flags, const socket_option_list & list);
+
 	int fd;
 	int flags;
 };

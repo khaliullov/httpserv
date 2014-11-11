@@ -2,9 +2,10 @@
 #define GUARD_HTTP_PARSER_WRAPPER 1
 
 #include <string>
+
 #include "http_parser.h"
 
-class http_server
+class http_server : public tcp_client_socket
 {
  public:
 	http_server();

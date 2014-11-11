@@ -50,6 +50,7 @@ extern "C" {
 		http_server * s = reinterpret_cast<http_server*>(p->data);
 		return s->message_complete();
 	}
+
 } // extern "C"
 
 http_server::http_server()

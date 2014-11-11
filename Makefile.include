@@ -189,6 +189,12 @@ libs-copy: subdirs libs debug-libs coverage-libs
 tags: subdirs
 	ctags -R .
 
+docs: doc/html
+
+doc/html: doc/Doxyfile $(shell find . -name '*.cc' -o -name '*.h')
+	rm -rf $@
+	doxygen doc/Doxyfile
+
 clean:
 	rm -rf $(OBJDIR) $(LIBDIR) $(BINDIR) \
 	core core.[0123456789]* a.out *.symbols
