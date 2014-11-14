@@ -1,7 +1,9 @@
 #include <unistd.h>
-#include <readline/readline.h>
 
+#include <cstdio>
 #include <string>
+
+#include <readline/readline.h>
 
 #include "interactive_listener.h"
 
