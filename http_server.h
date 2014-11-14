@@ -5,7 +5,7 @@
 
 #include "http_parser.h"
 
-class http_server : public tcp_client_socket
+class http_server
 {
  public:
 	http_server();

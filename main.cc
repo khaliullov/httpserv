@@ -18,7 +18,7 @@
 //////////////////////////////////////////////////////////////////////
 struct connection_listener : public event_listener
 {
-	connection_listener(net::tcp_server_socket && sock)
+	connection_listener(net::tcp_listening_socket && sock)
 	  : server_sock(std::move(sock))
 	{ }
 
@@ -51,7 +51,7 @@ struct connection_listener : public event_listener
 	int descriptor() const override
 		{ return server_sock; }
 
-	net::tcp_server_socket server_sock;
+	net::tcp_listening_socket server_sock;
 };
 
 
@@ -96,7 +96,7 @@ int main(int argc, char ** argv)
 			}
 
 			ptr.reset(new connection_listener(
-			                net::tcp_server_socket(addr, opts)));
+			                net::tcp_listening_socket(addr, opts)));
 			evloop.add_event(ptr);
 		}
 

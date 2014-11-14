@@ -103,13 +103,13 @@ bool socket::will_close_on_exec()
 	{ return (flags & SOCK_CLOEXEC); }
 
 //////////////////////////////////////////////////////////////////////
-// tcp_server_socket
+// tcp_listening_socket
 //
-tcp_server_socket::tcp_server_socket(const address & a, int flags)
-  : tcp_server_socket(a, socket_option_list{}, flags)
+tcp_listening_socket::tcp_listening_socket(const address & a, int flags)
+  : tcp_listening_socket(a, socket_option_list(), flags)
 	{ }
 
-tcp_server_socket::tcp_server_socket(const address & a,
+tcp_listening_socket::tcp_listening_socket(const address & a,
                                      const socket_option_list & opts,
                                      int flags)
   : socket(a.get_addr()->sa_family, SOCK_STREAM | flags, 0, opts)
@@ -122,13 +122,13 @@ tcp_server_socket::tcp_server_socket(const address & a,
 		throw make_syserr("Could not bind to listen");
 }
 
-tcp_server_socket::tcp_server_socket(tcp_server_socket && other) noexcept
+tcp_listening_socket::tcp_listening_socket(tcp_listening_socket && other) noexcept
   : socket(std::move(other))
   , m_address(std::move(other.m_address))
 	{ }
 
-tcp_server_socket &
-tcp_server_socket::operator = (tcp_server_socket && other) noexcept
+tcp_listening_socket &
+tcp_listening_socket::operator = (tcp_listening_socket && other) noexcept
 {
 	using std::swap;
 	net::socket::operator=(std::move(other));
@@ -136,7 +136,7 @@ tcp_server_socket::operator = (tcp_server_socket && other) noexcept
 	return *this;
 }
 
-std::tuple<int, address> tcp_server_socket::accept(int flags)
+std::tuple<int, address> tcp_listening_socket::accept(int flags)
 {
 	struct sockaddr_storage buf;
 	socklen_t len = sizeof(sockaddr_storage);

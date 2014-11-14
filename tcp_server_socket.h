@@ -7,6 +7,7 @@
 #include <vector>
 #include <memory>
 
+#include "utility/util.h"
 #include "address.h"
 
 namespace net {
@@ -69,31 +70,73 @@ class socket
 };
 
 //////////////////////////////////////////////////////////////////////
-class tcp_server_socket : public net::socket
+class tcp_listening_socket : public net::socket
 {
  public:
 	static const int default_flags = (SOCK_CLOEXEC|SOCK_NONBLOCK);
 
-	tcp_server_socket(const address & a, int flags = default_flags);
+	tcp_listening_socket(const address & a, int flags = default_flags);
 
-	tcp_server_socket(const address & a,
+	tcp_listening_socket(const address & a,
 	                  const socket_option_list & opts,
 	                  int flags = default_flags);
 
-	tcp_server_socket(const tcp_server_socket &) = delete;
+	tcp_listening_socket(const tcp_listening_socket &) = delete;
 
-	tcp_server_socket & operator = (const tcp_server_socket &) = delete;
+	tcp_listening_socket & operator = (const tcp_listening_socket &) = delete;
 
-	tcp_server_socket(tcp_server_socket && other) noexcept;
+	tcp_listening_socket(tcp_listening_socket && other) noexcept;
 
-	tcp_server_socket & operator = (tcp_server_socket && other) noexcept;
+	tcp_listening_socket & operator = (tcp_listening_socket && other) noexcept;
 
 	std::tuple<int, address> accept(int flags = default_flags);
 
+	template<typename T>
+	std::shared_ptr<T> accept_alt(int flags = default_flags)
+	{
+		struct sockaddr_storage buf;
+		socklen_t len = sizeof(sockaddr_storage);
+
+		std::shared_ptr<T> sptr;
+
+		int sfd = accept4(fd, reinterpret_cast<sockaddr*>(&buf), &len, flags);
+
+		if (sfd < 0)
+		{
+			if ( ! (this->is_nonblocking() && errno == EAGAIN) )
+				throw make_syserr("Could not accept connection");
+		} else
+		{
+			auto addr = address{reinterpret_cast<sockaddr*>(&buf), len};
+			sptr.reset(std::make_shared<T>(sfd, addr));
+		}
+		return sptr;
+	}
 
  protected:
 	address m_address;
+};
 
+//////////////////////////////////////////////////////////////////////
+class tcp_server_socket : public net::socket
+{
+ public:
+	tcp_server_socket(int fd, const address & a);
+
+	tcp_server_socket(int fd,
+	                  const address & a,
+	                  const socket_option_list & opts);
+
+ public:
+	tcp_server_socket(const tcp_listening_socket &) = delete;
+	tcp_server_socket & operator = (const tcp_listening_socket &) = delete;
+
+	tcp_server_socket(tcp_listening_socket && other) noexcept;
+
+	tcp_server_socket & operator = (tcp_listening_socket && other) noexcept;
+
+ protected:
+	address m_address;
 };
 
 } // namespace net
