@@ -40,6 +40,8 @@ typedef std::vector<socket_option> socket_option_list;
 class socket
 {
  public:
+	static const int default_flags = (SOCK_CLOEXEC|SOCK_NONBLOCK);
+
 	socket(int domain, int type, int protocol = 0);
 
 	socket(int domain, int type, int protocol, const socket_option_list & list);
@@ -73,7 +75,6 @@ class socket
 class tcp_listening_socket : public net::socket
 {
  public:
-	static const int default_flags = (SOCK_CLOEXEC|SOCK_NONBLOCK);
 
 	tcp_listening_socket(const address & a, int flags = default_flags);
 
@@ -121,19 +122,36 @@ class tcp_listening_socket : public net::socket
 class tcp_server_socket : public net::socket
 {
  public:
-	tcp_server_socket(int fd, const address & a);
+	tcp_server_socket(int fd, const address & a, int flags = default_flags)
+	  : socket(fd, flags, socket_option_list())
+	  , m_address(a)
+		{ }
 
-	tcp_server_socket(int fd,
-	                  const address & a,
-	                  const socket_option_list & opts);
+	tcp_server_socket(int fd, const address & a, int flags,
+	                  const socket_option_list & opts)
+	  : socket(fd, flags, opts)
+	  , m_address(a)
+		{ }
 
- public:
-	tcp_server_socket(const tcp_listening_socket &) = delete;
-	tcp_server_socket & operator = (const tcp_listening_socket &) = delete;
+	tcp_server_socket(const tcp_server_socket &) = delete;
 
-	tcp_server_socket(tcp_listening_socket && other) noexcept;
+	tcp_server_socket & operator = (const tcp_server_socket &) = delete;
 
-	tcp_server_socket & operator = (tcp_listening_socket && other) noexcept;
+	tcp_server_socket(tcp_server_socket && other) noexcept
+	  : socket(std::move(other))
+	  , m_address(std::move(other.m_address))
+		{ }
+
+	tcp_server_socket & operator = (tcp_server_socket && other) noexcept
+	{
+		using std::swap;
+		net::socket::operator=(std::move(other));
+		swap(m_address, other.m_address);
+		return * this;
+	}
+
+	virtual ~tcp_server_socket()
+		{ }
 
  protected:
 	address m_address;

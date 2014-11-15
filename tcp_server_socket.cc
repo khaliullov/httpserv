@@ -122,7 +122,8 @@ tcp_listening_socket::tcp_listening_socket(const address & a,
 		throw make_syserr("Could not bind to listen");
 }
 
-tcp_listening_socket::tcp_listening_socket(tcp_listening_socket && other) noexcept
+tcp_listening_socket::tcp_listening_socket(
+                        tcp_listening_socket && other) noexcept
   : socket(std::move(other))
   , m_address(std::move(other.m_address))
 	{ }

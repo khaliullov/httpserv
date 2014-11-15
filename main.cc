@@ -19,12 +19,13 @@
 struct connection_listener : public event_listener
 {
 	connection_listener(net::tcp_listening_socket && sock)
-	  : server_sock(std::move(sock))
-	{ }
+	  : listen_sock(std::move(sock))
+		{ }
 
-	virtual ~connection_listener() { }
+	virtual ~connection_listener()
+		{ }
 
-	virtual void action(event_loop &, uint32_t events) override
+	void action(event_loop &, uint32_t events) override
 	{
 		int fd = -1;
 		net::address addr;
@@ -32,45 +33,51 @@ struct connection_listener : public event_listener
 		printf("event mask = %08x\n", events);
 
 		do {
-			std::tie(fd, addr) = server_sock.accept();
+			std::tie(fd, addr) = listen_sock.accept();
 
 			if (fd >= 0)
 			{
 				printf("Accepted client connection from %s - fd = %d, "
 				       "server fd = %d\n",
-				       addr.str().c_str(), fd, (int) server_sock);
+				       addr.str().c_str(), fd, (int) listen_sock);
 
 				close(fd);
 			}
-		} while (server_sock.is_nonblocking() && fd >= 0);
+		} while (listen_sock.is_nonblocking() && fd >= 0);
 	}
 
-	virtual uint32_t get_default_events() const
+	uint32_t get_default_events() const override
 		{ return (EPOLLIN | EPOLLET); }
+
+	int descriptor() const override
+		{ return listen_sock; }
+
+	net::tcp_listening_socket listen_sock;
+};
+
+//////////////////////////////////////////////////////////////////////
+struct server_socket_listener : public event_listener
+{
+	server_socket_listener(net::tcp_server_socket && sock)
+	  : server_sock(std::move(sock))
+		{ }
+
+	virtual ~server_socket_listener()
+		{ }
+
+	void action(event_loop &, uint32_t events) override
+	{
+		printf("%s: got event mask %08x\n", __PRETTY_FUNCTION__, events);
+	}
+
+	uint32_t get_default_events() const override
+		{ return 0; }
 
 	int descriptor() const override
 		{ return server_sock; }
 
-	net::tcp_listening_socket server_sock;
+	net::tcp_server_socket server_sock;
 };
-
-
-//////////////////////////////////////////////////////////////////////
-namespace net {
-	typedef int client_socket;
-}
-
-struct client_event : public event_listener
-{
-	client_event(net::client_socket && sock) ;
-
-	virtual ~client_event();
-
-	void action(event_loop &, uint32_t events) override;
-
-	net::client_socket client_sock;
-};
-
 
 //////////////////////////////////////////////////////////////////////
 int main(int argc, char ** argv)
