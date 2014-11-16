@@ -109,7 +109,7 @@ class tcp_listening_socket : public net::socket
 		} else
 		{
 			auto addr = address{reinterpret_cast<sockaddr*>(&buf), len};
-			sptr.reset(std::make_shared<T>(sfd, addr));
+			sptr = std::make_shared<T>(sfd, addr);
 		}
 		return sptr;
 	}
@@ -151,7 +151,12 @@ class tcp_server_socket : public net::socket
 	}
 
 	virtual ~tcp_server_socket()
-		{ }
+	{
+		printf("Destructor - %s\n", __PRETTY_FUNCTION__);
+	}
+
+	const address & client_address() const
+		{ return m_address; }
 
  protected:
 	address m_address;

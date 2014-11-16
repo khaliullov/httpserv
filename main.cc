@@ -13,8 +13,6 @@
 #include "event.h"
 #include "interactive_listener.h"
 
-#define MYDEBUG 1
-
 //////////////////////////////////////////////////////////////////////
 struct connection_listener : public event_listener
 {
@@ -27,23 +25,22 @@ struct connection_listener : public event_listener
 
 	void action(event_loop &, uint32_t events) override
 	{
-		int fd = -1;
-		net::address addr;
+		std::shared_ptr<net::tcp_server_socket> ss_ptr;
 
 		printf("event mask = %08x\n", events);
 
 		do {
-			std::tie(fd, addr) = listen_sock.accept();
+			ss_ptr = listen_sock.accept_alt<net::tcp_server_socket>();
 
-			if (fd >= 0)
+			if (ss_ptr)
 			{
 				printf("Accepted client connection from %s - fd = %d, "
 				       "server fd = %d\n",
-				       addr.str().c_str(), fd, (int) listen_sock);
+				       ss_ptr->client_address().str().c_str(),
+				       (int) *ss_ptr, (int) listen_sock);
 
-				close(fd);
 			}
-		} while (listen_sock.is_nonblocking() && fd >= 0);
+		} while (listen_sock.is_nonblocking() && ss_ptr);
 	}
 
 	uint32_t get_default_events() const override
