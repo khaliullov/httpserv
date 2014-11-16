@@ -93,12 +93,11 @@ class tcp_listening_socket : public net::socket
 	std::tuple<int, address> accept(int flags = default_flags);
 
 	template<typename T>
-	std::shared_ptr<T> accept_alt(int flags = default_flags)
+	std::unique_ptr<T> accept_alt(int flags = default_flags)
 	{
 		struct sockaddr_storage buf;
 		socklen_t len = sizeof(sockaddr_storage);
-
-		std::shared_ptr<T> sptr;
+		std::unique_ptr<T> return_ptr;
 
 		int sfd = accept4(fd, reinterpret_cast<sockaddr*>(&buf), &len, flags);
 
@@ -109,9 +108,9 @@ class tcp_listening_socket : public net::socket
 		} else
 		{
 			auto addr = address{reinterpret_cast<sockaddr*>(&buf), len};
-			sptr = std::make_shared<T>(sfd, addr);
+			return_ptr.reset(new T(sfd, addr));
 		}
-		return sptr;
+		return return_ptr;
 	}
 
  protected:
@@ -152,7 +151,8 @@ class tcp_server_socket : public net::socket
 
 	virtual ~tcp_server_socket()
 	{
-		printf("Destructor - %s\n", __PRETTY_FUNCTION__);
+		if (fd >= 0)
+			printf("Destructor - %s\n", __PRETTY_FUNCTION__);
 	}
 
 	const address & client_address() const

@@ -3,6 +3,7 @@
 
 #include <sys/epoll.h>
 
+#include <string>
 #include <set>
 #include <memory>
 
@@ -33,6 +34,9 @@ class event_loop
 //////////////////////////////////////////////////////////////////////
 struct event_listener
 {
+	static const uint32_t all_events = (EPOLLIN | EPOLLOUT | EPOLLPRI);
+	static const uint32_t all_et_events = (all_events | EPOLLRDHUP | EPOLLET);
+
 	event_listener() { }
 
 	virtual ~event_listener() { }
@@ -50,6 +54,8 @@ struct event_listener
 	virtual uint32_t get_default_events() const = 0;
 
 	virtual int descriptor() const = 0;
+
+	static std::string mask_to_string(uint32_t mask);
 };
 
 #endif // GUARD_EVENT_H

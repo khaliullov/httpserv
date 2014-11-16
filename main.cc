@@ -14,6 +14,31 @@
 #include "interactive_listener.h"
 
 //////////////////////////////////////////////////////////////////////
+struct server_socket_listener : public event_listener
+{
+	server_socket_listener(net::tcp_server_socket && sock)
+	  : server_sock(std::move(sock))
+		{ }
+
+	virtual ~server_socket_listener()
+		{ }
+
+	void action(event_loop &, uint32_t events) override
+	{
+		printf("%s: mask %s\n", __func__,
+		       mask_to_string(events).c_str());
+	}
+
+	uint32_t get_default_events() const override
+		{ return all_et_events; }
+
+	int descriptor() const override
+		{ return server_sock; }
+
+	net::tcp_server_socket server_sock;
+};
+
+//////////////////////////////////////////////////////////////////////
 struct connection_listener : public event_listener
 {
 	connection_listener(net::tcp_listening_socket && sock)
@@ -23,9 +48,9 @@ struct connection_listener : public event_listener
 	virtual ~connection_listener()
 		{ }
 
-	void action(event_loop &, uint32_t events) override
+	void action(event_loop & evloop, uint32_t events) override
 	{
-		std::shared_ptr<net::tcp_server_socket> ss_ptr;
+		std::unique_ptr<net::tcp_server_socket> ss_ptr;
 
 		printf("event mask = %08x\n", events);
 
@@ -39,6 +64,10 @@ struct connection_listener : public event_listener
 				       ss_ptr->client_address().str().c_str(),
 				       (int) *ss_ptr, (int) listen_sock);
 
+				std::shared_ptr<event_listener> listener(
+				  new server_socket_listener(std::move(*ss_ptr)));
+
+				evloop.add_event(listener);
 			}
 		} while (listen_sock.is_nonblocking() && ss_ptr);
 	}
@@ -50,30 +79,6 @@ struct connection_listener : public event_listener
 		{ return listen_sock; }
 
 	net::tcp_listening_socket listen_sock;
-};
-
-//////////////////////////////////////////////////////////////////////
-struct server_socket_listener : public event_listener
-{
-	server_socket_listener(net::tcp_server_socket && sock)
-	  : server_sock(std::move(sock))
-		{ }
-
-	virtual ~server_socket_listener()
-		{ }
-
-	void action(event_loop &, uint32_t events) override
-	{
-		printf("%s: got event mask %08x\n", __PRETTY_FUNCTION__, events);
-	}
-
-	uint32_t get_default_events() const override
-		{ return 0; }
-
-	int descriptor() const override
-		{ return server_sock; }
-
-	net::tcp_server_socket server_sock;
 };
 
 //////////////////////////////////////////////////////////////////////

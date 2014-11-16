@@ -46,3 +46,27 @@ void event_loop::run()
 	}
 }
 
+std::string event_listener::mask_to_string(uint32_t mask)
+{
+	std::string str{"[ "};
+
+	if (mask & EPOLLIN)
+		str += "IN ";
+	if (mask & EPOLLOUT)
+		str += "OUT ";
+	if (mask & EPOLLRDHUP)
+		str += "RDHUP ";
+	if (mask & EPOLLPRI)
+		str += "PRI ";
+	if (mask & EPOLLERR)
+		str += "ERR ";
+	if (mask & EPOLLHUP)
+		str += "HUP ";
+	if (mask & EPOLLET)
+		str += "ET ";
+	if (mask & EPOLLONESHOT)
+		str += "ONESHOT ";
+
+	str += ']';
+	return str;
+}
