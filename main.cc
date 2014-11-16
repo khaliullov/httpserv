@@ -27,10 +27,37 @@ struct server_socket_listener : public event_listener
 	{
 		printf("%s: mask %s\n", __func__,
 		       mask_to_string(events).c_str());
+
+		if (events & EPOLLIN)
+		{
+			char buff[1024];
+			ssize_t n = 0;
+			do {
+				n = read(server_sock, buff, 1024);
+
+				printf("-> Read %zd bytes\n", n);
+
+				if (n < 0)
+				{
+					if (!(server_sock.is_nonblocking() && errno == EAGAIN))
+						throw make_syserr("Could not read from descriptor");
+				}
+
+			} while (n > 0);
+		}
+
+		if (events & EPOLLRDHUP)
+		{
+			printf("Client closed connection\n");
+		}
+	}
+
+	void queue_send(const char *, size_t)
+	{
 	}
 
 	uint32_t get_default_events() const override
-		{ return all_et_events; }
+		{ return all_et_input_events; }
 
 	int descriptor() const override
 		{ return server_sock; }

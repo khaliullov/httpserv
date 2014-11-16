@@ -40,7 +40,7 @@ typedef std::vector<socket_option> socket_option_list;
 class socket
 {
  public:
-	static const int default_flags = (SOCK_CLOEXEC|SOCK_NONBLOCK);
+	static const int default_flags = (SOCK_CLOEXEC | SOCK_NONBLOCK);
 
 	socket(int domain, int type, int protocol = 0);
 

@@ -34,8 +34,11 @@ class event_loop
 //////////////////////////////////////////////////////////////////////
 struct event_listener
 {
-	static const uint32_t all_events = (EPOLLIN | EPOLLOUT | EPOLLPRI);
-	static const uint32_t all_et_events = (all_events | EPOLLRDHUP | EPOLLET);
+	static const uint32_t all_events =
+	  (EPOLLIN | EPOLLOUT | EPOLLPRI | EPOLLRDHUP);
+	static const uint32_t all_input_events = (EPOLLIN | EPOLLPRI | EPOLLRDHUP);
+	static const uint32_t all_et_events = (all_events | EPOLLET);
+	static const uint32_t all_et_input_events = (all_input_events | EPOLLET);
 
 	event_listener() { }
 
