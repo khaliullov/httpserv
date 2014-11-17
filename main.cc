@@ -23,7 +23,7 @@ struct server_socket_listener : public event_listener
 	virtual ~server_socket_listener()
 		{ }
 
-	void action(event_loop &, uint32_t events) override
+	void action(event_loop & evloop, uint32_t events) override
 	{
 		printf("%s: mask %s\n", __func__,
 		       mask_to_string(events).c_str());
@@ -49,13 +49,15 @@ struct server_socket_listener : public event_listener
 		if (events & EPOLLRDHUP)
 		{
 			printf("Client closed connection\n");
-//			evloop.delete_event(get_shared());
+			evloop.delete_event(this->get_shared());
 		}
 	}
 
 	void queue_send(const char *, size_t)
 	{
 	}
+
+	int get_descriptor() { return server_sock; }
 
 	uint32_t get_default_events() const override
 		{ return all_et_input_events; }

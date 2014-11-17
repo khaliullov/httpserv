@@ -20,7 +20,7 @@ class event_loop
 
 	void add_event(std::shared_ptr<event_listener> & e);
 
-	void delete_event(std::shared_ptr<event_listener> & e);
+	void delete_event(const std::shared_ptr<event_listener> & e);
 	
 	void run();
 
@@ -65,8 +65,8 @@ class event_listener : public std::enable_shared_from_this<event_listener>
 
 	static std::string mask_to_string(uint32_t mask);
 
-	std::shared_ptr<event_listener> & get_shared()
-	{ return enable_shared_from_this(); }
+	std::shared_ptr<event_listener> get_shared()
+	{ return shared_from_this(); }
 };
 
 #endif // GUARD_EVENT_H
