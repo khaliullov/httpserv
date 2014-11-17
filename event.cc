@@ -28,6 +28,12 @@ void event_loop::add_event(std::shared_ptr<event_listener> & e)
 	epoll_ctl(evfd, EPOLL_CTL_ADD, e->descriptor(),  &ev);
 }
 
+void event_loop::delete_event(std::shared_ptr<event_listener> & e)
+{
+	if (event_list.erase(e) <= 0)
+		throw make_syserr("Could not file event listener");
+}
+	
 void event_loop::run()
 {
 	int count = 0;

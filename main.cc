@@ -49,6 +49,7 @@ struct server_socket_listener : public event_listener
 		if (events & EPOLLRDHUP)
 		{
 			printf("Client closed connection\n");
+//			evloop.delete_event(get_shared());
 		}
 	}
 
