@@ -79,7 +79,8 @@ struct connection_listener : public event_listener
 	{
 		std::unique_ptr<net::tcp_server_socket> ss_ptr;
 
-		printf("event mask = %08x\n", events);
+		printf("event mask = %s\n",
+		       mask_to_string(events).c_str());
 
 		do {
 			ss_ptr = listen_sock.accept_alt<net::tcp_server_socket>();
