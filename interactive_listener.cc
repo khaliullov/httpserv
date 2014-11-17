@@ -18,6 +18,8 @@ static void readlineCB(char * s)
 		free(s);
 		if (cmd == "quit")
 			exit(0);
+		else if (cmd == "pid")
+			printf("my pid = %u\n", getpid());
 	} else
 	{
 		exit(0);
