@@ -60,7 +60,8 @@ statserv_OBJS     = main.o serverconfig.o regexclass.o \
                     event.o interactive_listener.o \
                     address.o net_error.o tcp_server_socket.o
 
-client_OBJS       = client.o
+client_OBJS       = client.o \
+                    address.o net_error.o tcp_server_socket.o
 
 include Makefile.include
 

@@ -33,7 +33,7 @@ class Test_Crc : public CppUnit::TestFixture
  public:
 	~Test_Crc()
 	{
-		unlink("data");
+//		unlink("data");
 	}
 
 	void setUp()
@@ -115,7 +115,10 @@ class Test_Crc : public CppUnit::TestFixture
 		char * ptr = reinterpret_cast<char*>(buffer.data());
 
 		while ((rc = read(randomData, ptr, bufSz)) > 0)
+		{
 			myCrc(buffer.data(), rc / sizeof(E));
+//			printf("-> %08x\n", myCrc.get());
+		}
 
 		if (rc < 0) throw std::runtime_error("read failed");
 
