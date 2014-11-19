@@ -51,13 +51,16 @@ SUBDIRS           = xos/src/codecvt \
                     xos/src/filesystem \
                     xos/src/unit
 
-TARGETS           = statserv
+TARGETS           = statserv client
+
 LIB_TARGETS       =
 
 statserv_OBJS     = main.o serverconfig.o regexclass.o \
                     http_server.o http_parser.o \
                     event.o interactive_listener.o \
                     address.o net_error.o tcp_server_socket.o
+
+client_OBJS       = client.o
 
 include Makefile.include
 
