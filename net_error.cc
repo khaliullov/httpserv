@@ -1,5 +1,6 @@
 #include "net_error.h"
 
+#include <netdb.h>
 
 namespace net {
 

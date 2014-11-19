@@ -1,13 +1,8 @@
-#include <sys/epoll.h>
-#include <sys/socket.h>
 #include <unistd.h>
+
 #include <cstdio>
-#include <set>
 #include <vector>
 
-#include <readline/readline.h>
-
-#include "utility/util.h"
 #include "serverconfig.h"
 #include "tcp_server_socket.h"
 #include "event.h"
@@ -30,20 +25,33 @@ struct server_socket_listener : public event_listener
 
 		if (events & EPOLLIN)
 		{
+			std::string assembled; // XXX horrible FIXME
 			char buff[1024];
 			ssize_t n = 0;
 			do {
 				n = read(server_sock, buff, 1024);
 
-				printf("-> Read %zd bytes\n", n);
+				printf("-> read() returned %zd bytes\n", n);
 
-				if (n < 0)
+				if (n > 0)
+				{
+					assembled.append(buff, n);
+				} else if (n < 0)
 				{
 					if (!(server_sock.is_nonblocking() && errno == EAGAIN))
 						throw make_syserr("Could not read from descriptor");
-				}
+				} else // n == 0
+				{
+//					printf("End of file signaled with read return of 0; "
+//					       "event mask %s RDHUP bit set\n",
+//					       (events & EPOLLRDHUP) ? "has" : "does not have");
 
+					if ((events & EPOLLRDHUP) == 0)
+						throw std::logic_error("Unexpected event mask");
+				}
 			} while (n > 0);
+
+			printf("-> Read string '''%s'''", assembled.c_str());
 		}
 
 		if (events & EPOLLRDHUP)
@@ -51,10 +59,6 @@ struct server_socket_listener : public event_listener
 			printf("Client closed connection\n");
 			evloop.delete_event(this->get_shared());
 		}
-	}
-
-	void queue_send(const char *, size_t)
-	{
 	}
 
 	int get_descriptor() { return server_sock; }
@@ -82,7 +86,7 @@ struct connection_listener : public event_listener
 	{
 		std::unique_ptr<net::tcp_server_socket> ss_ptr;
 
-		printf("event mask = %s\n",
+		printf("%s: event mask = %s\n", __func__,
 		       mask_to_string(events).c_str());
 
 		do {
