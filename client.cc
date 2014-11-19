@@ -14,7 +14,7 @@ uint32_t getFileCrc(const fs::path & filename)
 {
 	uint32_t crc = 0;
 	CRC_32 accum;
-	const int bufsz = 1024;
+	const int bufsz = 4096;
 	char buffer[bufsz];
 	int fd;
 	int n;
@@ -24,8 +24,10 @@ uint32_t getFileCrc(const fs::path & filename)
 
 	while ((n = read(fd, buffer, bufsz)) > 0)
 	{
-		accum(buffer, bufsz, true);
+		accum(buffer, n);
 	}
+
+	if (n < 0) throw std::runtime_error("read failed");
 
 	close(fd);
 
@@ -50,7 +52,17 @@ int main(int argc, char ** argv)
 	if (size <= 0)
 		throw std::runtime_error("Bad file size");
 
-	printf("CRC = %08X\n", ~getFileCrc(myfile));
+	printf("crc read from file '%s' = %08x\n", myfile.c_str(),
+	       getFileCrc(myfile));
+
+	auto address = net::address::get_addresses(SOCK_STREAM,
+	                                           "localhost", "2080").front();
+
+
+	net::tcp_client_socket c_sock(address);
+
+	c_sock.send_data(myfile.c_str(), myfile.string().length());
+
 	return 0;
 }
 

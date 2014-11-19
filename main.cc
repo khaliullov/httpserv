@@ -51,7 +51,7 @@ struct server_socket_listener : public event_listener
 				}
 			} while (n > 0);
 
-			printf("-> Read string '''%s'''", assembled.c_str());
+			printf("-> Read string '''%s'''\n", assembled.c_str());
 		}
 
 		if (events & EPOLLRDHUP)

@@ -67,7 +67,8 @@ class Crc
 			for (std::size_t i = 0; i < sizeof(v); ++i)
 			{
 				seed = (seed >> 8) ^ crcTable[(seed & 0xFF) ^ (val & 0xFF)];
-				val >>= 8;
+
+				if (sizeof(v) > 1) val >>= 8;
 			}
 			return seed;
 		};
