@@ -154,15 +154,17 @@ all: release
 
 release:
 	$(MAKE) libs-copy
-	$(MAKE) $(TARGETS)
+	if [ -n "$(TARGETS)" ]; then $(MAKE) $(TARGETS); fi
 
 debug:
 	$(MAKE) libs-copy
-	$(MAKE) $(DBG_TARGETS)
+	if [ -n "$(TARGETS)" ]; then $(MAKE) $(DBG_TARGETS); fi
 
 coverage:
 	$(MAKE) libs-copy
-	$(MAKE) $(COV_TARGETS)
+	if [ -n "$(TARGETS)" ]; then $(MAKE) $(COV_TARGETS); fi
+
+check: subdirs
 
 libs: subdirs $(LIB_TARGETS)
 

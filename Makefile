@@ -47,7 +47,10 @@ export LIBS_debug        = $(LIBS_base)
 export LIBS_coverage     = $(LIBS_base)
 export LIBS              = $(LIBS_$(BUILD))
 
-SUBDIRS           = xos/src/codecvt xos/src/filesystem
+SUBDIRS           = xos/src/codecvt \
+                    xos/src/filesystem \
+                    xos/src/unit
+
 TARGETS           = statserv
 LIB_TARGETS       =
 
