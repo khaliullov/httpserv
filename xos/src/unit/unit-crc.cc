@@ -33,7 +33,7 @@ class Test_Crc : public CppUnit::TestFixture
  public:
 	~Test_Crc()
 	{
-//		unlink("data");
+		unlink("data");
 	}
 
 	void setUp()
