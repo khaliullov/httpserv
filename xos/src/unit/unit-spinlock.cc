@@ -15,7 +15,7 @@ class Test_spinlock : public CppUnit::TestFixture
 
  public:
 	void setUp() {
-		lock = new SpinLock;
+		lock = new spin_lock;
 		sharedValue = 0;
 	}
 
@@ -67,7 +67,7 @@ class Test_spinlock : public CppUnit::TestFixture
 	}
 
 	int sharedValue;
-	SpinLock * lock;
+	spin_lock * lock;
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(Test_spinlock);

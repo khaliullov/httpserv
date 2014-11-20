@@ -36,7 +36,7 @@ class Crc
 	Crc(T seed = 0) noexcept
 	  : crcValue(~seed)
 	{
-		std::lock_guard<SpinLock> lg(tableLock);
+		std::lock_guard<spin_lock> lg(tableLock);
 
 		if ( ! tableInitialized )
 		{
@@ -86,7 +86,7 @@ class Crc
 
 	void static generateTable() noexcept;
 
-	static SpinLock tableLock;
+	static spin_lock tableLock;
 	static bool tableInitialized;
 	static table_type crcTable;
 };
@@ -94,7 +94,7 @@ class Crc
 typedef Crc<uint32_t, Polynomial::Crc32> CRC_32;
 typedef Crc<uint32_t, Polynomial::Crc32c> CRC_32c;
 
-template<class T, T P> SpinLock Crc<T, P>::tableLock{};
+template<class T, T P> spin_lock Crc<T, P>::tableLock{};
 template<class T, T P> bool Crc<T, P>::tableInitialized{false};
 template <class T, T P> typename Crc<T, P>::table_type Crc<T, P>::crcTable;
 

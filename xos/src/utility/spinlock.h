@@ -3,32 +3,32 @@
 
 #include <atomic>
 
-class SpinLock
+class spin_lock
 {
  public:
-	SpinLock() : spinFlag{ATOMIC_FLAG_INIT} { }
+	spin_lock() : spin_flag{ATOMIC_FLAG_INIT} { }
 
-	SpinLock(const SpinLock &) = delete;
-	SpinLock & operator = (const SpinLock &) = delete;
+	spin_lock(const spin_lock &) = delete;
+	spin_lock & operator = (const spin_lock &) = delete;
 
 	// Is this correct?
-	~SpinLock() { lock(); }
+	~spin_lock() { lock(); }
 
 	void lock()
 	{
-		while (spinFlag.test_and_set(std::memory_order_acquire))
+		while (spin_flag.test_and_set(std::memory_order_acquire))
 		{
 			asm("pause" : : :);
 		}
 	}
 	
 	bool try_lock()
-		{ return (! spinFlag.test_and_set(std::memory_order_acquire)); }
+		{ return (! spin_flag.test_and_set(std::memory_order_acquire)); }
 
-	void unlock() { spinFlag.clear(std::memory_order_release); }
+	void unlock() { spin_flag.clear(std::memory_order_release); }
 
  private:
-	std::atomic_flag spinFlag;
+	std::atomic_flag spin_flag;
 };
 
 #endif // GUARD_SPINLOCK_H
