@@ -151,8 +151,8 @@ class tcp_server_socket : public net::socket
 
 	virtual ~tcp_server_socket()
 	{
-		if (fd >= 0)
-			printf("Destructor - %s\n", __PRETTY_FUNCTION__);
+//		if (fd >= 0)
+//			printf("Destructor - %s\n", __PRETTY_FUNCTION__);
 	}
 
 	const address & client_address() const

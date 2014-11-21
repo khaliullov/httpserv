@@ -8,6 +8,7 @@
 #include <memory>
 
 #include "utility/util.h"
+#include "utility/spinlock.h"
 
 class event_listener;
 
@@ -22,14 +23,17 @@ class event_loop
 
 	void delete_event(const std::shared_ptr<event_listener> & e);
 	
-	void run();
+	void run(int id = 0);
 
  private:
 	int evfd;
 
+	spin_lock lock;
+
 	std::set<std::shared_ptr<event_listener>> event_list;
 
 	int max_events;
+
 	std::unique_ptr<struct epoll_event[]> ev_buffer;
 };
 

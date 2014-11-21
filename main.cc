@@ -2,6 +2,8 @@
 
 #include <cstdio>
 #include <vector>
+#include <functional>
+#include <thread>
 
 #include "serverconfig.h"
 #include "tcp_server_socket.h"
@@ -36,6 +38,9 @@ struct server_socket_listener : public event_listener
 				if (n > 0)
 				{
 					assembled.append(buff, n);
+
+					if (n < 1024)
+						break;
 				} else if (n < 0)
 				{
 					if (!(server_sock.is_nonblocking() && errno == EAGAIN))
@@ -46,8 +51,8 @@ struct server_socket_listener : public event_listener
 //					       "event mask %s RDHUP bit set\n",
 //					       (events & EPOLLRDHUP) ? "has" : "does not have");
 
-					if ((events & EPOLLRDHUP) == 0)
-						throw std::logic_error("Unexpected event mask");
+//					if ((events & EPOLLRDHUP) == 0)
+//						throw std::logic_error("Unexpected event mask");
 				}
 			} while (n > 0);
 
@@ -116,10 +121,22 @@ struct connection_listener : public event_listener
 	net::tcp_listening_socket listen_sock;
 };
 
+void wrapper(event_loop & loop, int instance)
+{
+	try {
+		loop.run(instance);
+	} catch (std::exception & e)
+	{
+		printf("Thread %d - caught exception: %s\n", instance,  e.what());
+	}
+}
+
 //////////////////////////////////////////////////////////////////////
 int main(int argc, char ** argv)
 {
 	try { 
+		std::vector<std::thread> selectors;
+
 		server_config config(argc, argv);
 
 		event_loop evloop;
@@ -149,7 +166,16 @@ int main(int argc, char ** argv)
 
 		evloop.add_event(inter);
 
-		evloop.run();
+		printf("FOOBAR\n");
+		for (int i = 0; i < 20; ++i)
+		{
+			printf("RAWR %d\n", i);
+			selectors.emplace_back(wrapper, std::ref(evloop), i);
+		}
+
+		for (auto & t : selectors)
+			t.join();
+//		evloop.run();
 	} catch (std::exception & e)
 	{
 		printf("Caught exception: %s\n", e.what());

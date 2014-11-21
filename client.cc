@@ -2,6 +2,10 @@
 #include <unistd.h>
 #include <cassert>
 #include <string>
+#include <vector>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 #include "filesystem/filesystem"
 #include "utility/crc.h"
@@ -35,7 +39,22 @@ uint32_t getFileCrc(const fs::path & filename)
 
 	return crc;
 }
-	
+
+bool ready = false;
+
+void client_thread(const net::address & a,
+                   const fs::path & p,
+                   std::mutex & m,
+                   std::condition_variable & cv)
+{
+	std::unique_lock<std::mutex> ul(m);
+	cv.wait(ul, [] { return ready; });
+	ul.unlock();
+
+	net::tcp_client_socket c_sock(a);
+
+	c_sock.send_data(p.c_str(), p.string().length());
+}
 
 int main(int argc, char ** argv)
 {
@@ -55,13 +74,34 @@ int main(int argc, char ** argv)
 	printf("crc read from file '%s' = %08x\n", myfile.c_str(),
 	       getFileCrc(myfile));
 
-	auto address = net::address::get_addresses(SOCK_STREAM,
-	                                           "localhost", "2080").front();
+	auto addresses = net::address::get_addresses(SOCK_STREAM,
+	                                             "localhost", "2080");
 
+	std::mutex m;
+	std::condition_variable cv;
 
-	net::tcp_client_socket c_sock(address);
+	std::vector<std::thread> threads;
 
-	c_sock.send_data(myfile.c_str(), myfile.string().length());
+	for (int i = 0; i < 500; ++i)
+	{
+		size_t idx = i % addresses.size();
+		threads.emplace_back(client_thread,
+		                     std::ref(addresses.at(idx)),
+		                     std::ref(myfile),
+		                     std::ref(m),
+		                     std::ref(cv));
+	}
+
+	m.lock();
+	ready = true;
+	m.unlock();
+	cv.notify_all();
+//	net::tcp_client_socket c_sock(address);
+
+//	c_sock.send_data(myfile.c_str(), myfile.string().length());
+
+	for (auto & t : threads)
+		t.join();
 
 	return 0;
 }
