@@ -41,15 +41,14 @@ LIBS_debug        ?= $(LIBS_base)
 LIBS_coverage     ?= $(LIBS_base)
 LIBS              ?= $(LIBS_$(BUILD))
 
-TARGETS            = 
-LIB_TARGETS        = libfilesystem
-libfilesystem_OBJS = path.o \
-                     directory_entry.o \
-                     directory_iterator.o \
-                     recursive_directory_iterator.o \
-                     path_iterator.o \
-                     fs_operations.o \
-                     filesystem_error.o
+TARGETS            = test
+
+LIB_TARGETS        = libenv
+
+libenv_HEADERS     = program_config.h
+
+libenv_OBJS        = program_config.o
+
+test_OBJS          = test.o $(libenv_OBJS)
 
 include $(TOPDIR)/Makefile.include
-
