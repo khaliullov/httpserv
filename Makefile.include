@@ -9,6 +9,8 @@ CXX            ?= g++
 LD             ?= ld
 OBJCPY         ?= objcopy
 
+DESTDIR        ?= $(shell pwd)
+
 BINDIR          = bin
 DEPDIR          = .deps
 OBJDIR          = .objs
